@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/custom.css" />
+    <title></title>
+  </head>
+
+  <body>
+    <!-- Navigation Bar-->
+    <nav class="navbar navbar-default">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="/"><img src="/static/images/logo.PNG" id="logo"></img></a>
+      </div>
+
+      <div class="navbar-content">
+        <ul class="nav navbar-nav">
+
+          {% if not isLoggedIn %}
+          <li><a href="/gallery">Gallery</a></li>
+          {% endif %}
+
+          {% if isLoggedIn %}
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Gallery<span class="caret"></span></a>
+            <ul class="dropdown-menu">
+              <li><a href="/gallery">Browse</li>
+              <li><a href="/gallery/mymaps">My Maps</li>
+              <li><a href="/gallery/editmaps">Edit</a></li>
+            </ul>
+          </li>
+
+
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Create<span class="caret"></span></a>
+            <ul class="dropdown-menu">
+              <li>
+		<form action="/create/" autocomplete="off" method="POST" class="navbar-form navbar-left" role="search">
+		  <div class="form-group">
+		    <input name="mapName" type="text" class="form-control" placeholder="Name" required>
+		  </div>
+		  <button type="submit" class="btn btn-default">Create</button>
+		</form>
+	      </li>
+            </ul>
+          </li>
+	  
+
+          {% endif %}
+          <li><a href="/help">Help</a></li>
+        </ul>
+
+
+        <form action="/gallery/search" class="navbar-form navbar-left" role="search">
+          <div class="form-group">
+            <input name="searchQ" type="text" class="form-control" placeholder="Search" required>
+          </div>
+          <button type="submit" class="btn btn-default">Search</button>
+        </form>
+
+        <ul class="nav navbar-nav navbar-right">
+          {% if not isLoggedIn %}
+          <li>
+            <a data-toggle="modal" data-target="#signup" href="#signup">Signup</a>
+          </li>
+          <li>
+            <a data-toggle="modal" data-target="#login" href="#login">Login</a>
+          </li>
+          {% endif %}
+
+          {% if isLoggedIn %}
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-wrench
+            "></span><span class="caret"></span></a>
+            <ul class="dropdown-menu">
+              <li><a href="/gallery/mymaps">My Maps</li>
+              <li><a href="/settings">Settings</li>
+              <li><a href="#">Something else here</a></li>
+              <li role="separator" class="divider"></li>
+              <li><a href="/logout">Logout</a></li>
+            </ul>
+          </li>
+
+          {% endif %}
+        </ul>
+      </div>
+    </nav>
+   
+    <div id="content">
+      {% if message %}
+      <div>
+	      <h2 class="messagediv">{{message}}</h2>
+      </div>
+      {% endif %}
+
+      
+      {% block content %}
+      {% endblock %}
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="login">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title" id="myModalLabel">Good to see you again!</h4>
+          </div>
+          <div class="modal-body">
+            <form action="/login/" method="POST">
+              <input class="form-field" placeholder="Username" type="text" name="username" required>
+              <br>
+              <input class="form-field" placeholder="Password" type="password" name="password" required>
+              <hr>
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              <input type="submit" name="login" value="Login" class="btn btn-secondary">
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div class="modal fade" id="signup">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title" id="myModalLabel">Nice to meet you!</h4>
+          </div>
+          <div class="modal-body">
+            <form action="/register/" method="POST">
+              <input class="form-field" placeholder="Username" type="text" name="username" required>
+              <br>
+              <input class="form-field" placeholder="Password" type="password" name="password" required>
+              <hr>
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              <input type="submit" name="register" value="Register" class="btn btn-secondary">
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  
+   
+    <script src="/static/js/jquery.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    {% block js %}
+    {% endblock %}
+  </body>
+</html>

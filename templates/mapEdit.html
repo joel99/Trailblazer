@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+<h2 class="page-header">Map Editor : <span id="mapTitle">{{mapData["title"]}}</span> </h2>
+
+<div class="row">
+  <div class="col-md-2">
+    <button id="ptBtn" class="btn btn-default edit btn-block">Point</button>
+    <button id="nodeBtn" class="btn btn-default edit btn-block">Node</button>
+    <button id="pathBtn" class="btn btn-default edit btn-block">Path</button>
+    <button id="cnxnBtn" class="btn btn-default edit btn-block">Connection</button>
+    <button id="defBtn" class="btn btn-default edit btn-block">Default</button>
+    <button id="delElBtn" class="btn btn-default edit btn-block">Delete Element</button>
+  </div>
+
+  <div class="col-md-8">
+    <svg class="container-fluid" id="editorCanvas" xmlns="http://www.w3.org/2000/svg" style="border:1px solid #000000"/>
+  </div>
+
+  <div class="col-md-2">
+    <button id="clrBtn" class="btn btn-default edit btn-block">Clear</button>
+    <button id="delPgBtn" class="btn btn-default edit btn-block">Delete Page</button>
+    <button id="addPgBtn" class="btn btn-default edit btn-block">Add Page</button>
+    <button id="nextPgBtn" class="btn btn-default edit btn-block">Next Page</button>
+    <button id="prevPgBtn" class="btn btn-default edit btn-block">Prev Page</button>
+    <button id="delMapBtn" class="btn btn-default edit btn-block">Delete Map</button>
+    <button id="pubMapBtn" class="btn btn-default edit btn-block">Publish Map</button>
+    <button id="saveMapBtn" class="btn btn-default edit btn-block">Save Map</button>
+    <div id="uploadImgBtn">
+      <form id="form_upload" action="/map/upload/" method="post" enctype="multipart/form-data">
+	<label class="control-label" for="upload">
+	  Picture Upload
+	</label>
+	<input type="file" class="form-control" id="upload_input" name="upload">
+	<button id="upload-button" class="btn btn default edit btn-block"> Upload Picture</button>
+      </form>
+    </div>
+    
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-3"></div>
+
+  <div class="col-md-3">
+    <h2 class="messagediv">
+      Page <span id="pgNum"></span>:  <span id="pgTitle"></span>
+
+    </h2>
+    <br>
+    <p>Status: <span id="status"></span></p>
+    <br>
+  </div>
+  <div class="col-md-3">
+    <div id="monitor"></div>
+  </div>
+  <div class="col-md-3">
+  </div>
+</div>
+
+
+
+{% endblock %}
+
+
+{% block js %}
+
+<script src="/static/editor.js"></script>
+<script src="/static/editorBtns.js"></script>
+<!--<script src="/static/require.js"></script>-->
+<!--<script src="/static/svg-pan-zoom.js"></script>-->
+{% endblock %}

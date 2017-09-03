@@ -1,0 +1,121 @@
+html{
+    min-height: 100%;
+    margin: 0;
+    
+}
+
+body{
+    min-height: 100%;
+    margin: 0;
+    
+    
+}
+
+/* ---------------------------- N A V B A R -----------------------------------*/
+.navbar{
+    width: 100%;
+    background: white;
+    border-radius: 0px;
+    margin-bottom: 1px;
+    box-shadow: 0 4px 2px -2px black;
+    position: relative;
+}
+
+.navbar-right{
+    margin-right: 0px;
+}
+
+.nav.navbar-nav li a{
+	border-bottom: 2px solid transparent;
+}
+
+.nav.navbar-nav li a:hover{
+	border-bottom: 2px solid yellow;
+}
+
+#logo{
+    display: block;
+    max-width:130px;
+    max-height:56px;
+    width: auto;
+    height: auto;
+    margin-top: -15px;
+}
+/*----------------------------------------------------------------------------*/
+
+
+#content{
+    ///background-color: transparent;
+    color : white;
+    border-radius: 0px;
+    position: absolute;
+    width: 100%;
+    min-height: 100%;
+    background: black; /* For browsers that do not support gradients */
+    //background: -webkit-linear-gradient(left top, #4F00BC, #29ABE2); /* For Safari 5.1 to 6.0 */
+    //background: -o-linear-gradient(bottom right, #4F00BC, #29ABE2); /* For Opera 11.1 to 12.0 */
+    //background: -moz-linear-gradient(bottom right, #4F00BC, #29ABE2); /* For Firefox 3.6 to 15 */
+    background: linear-gradient(to bottom right, #4F00BC, #29ABE2); /* Standard syntax */
+    
+}
+
+.container{
+    color: white;
+    border-radius: 0px;
+}
+
+#editorCanvas{
+    background: white;
+}
+
+.error{
+    margin: auto;
+    //margin-top: 25px;
+    //margin-bottom: 25px;
+    text-align: center;
+    color: white;
+}
+
+.messagediv{
+    margin: auto;
+    margin-top: 25px;
+    margin-bottom: 25px;
+    text-align: center;
+    color: white;
+}
+
+.jumbotron{
+	background: none;
+}
+
+
+
+.input-lg {
+    font-family: inherit;
+    font-size: 90px;
+    line-height: inherit;
+}
+
+#homeinput{
+    height: 50px;
+}
+
+.edit{
+    margin: 0px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+    width: 100%;
+    padding: auto;
+    word-wrap: break-word;
+}
+
+.col-md-1{
+    margin-left: 0px;
+    padding: 0px;
+    padding-left: 0px;
+    padding-right: 0px;
+}
+
+input, select, textarea{
+    color: black;
+}
