@@ -31,12 +31,12 @@ nodeBtn.addEventListener("click", setModeFunc(ADD_NODE));
 cnxnBtn.addEventListener("click", setModeFunc(ADD_CNXN));
 
 clrBtn.addEventListener("click", clrEditor);
-//addPgBtn.addEventListener("click", addPage);
-//delPgBtn.addEventListener("click", delPage);
-//nextPgBtn.addEventListener("click", toNextPage);
-//prevPgBtn.addEventListener("click", toPrevPage);
-//delElBtn.addEventListener("click", delEl);
-//saveMapBtn.addEventListener("click", saveMap);
-//delMapBtn.addEventListener("click", delMap);
-//uploadImgBtn.addEventListener("click", uploadImg);
+addPgBtn.addEventListener("click", addPage);
+delPgBtn.addEventListener("click", delPage);
+nextPgBtn.addEventListener("click", toNextPage);
+prevPgBtn.addEventListener("click", toPrevPage);
+delElBtn.addEventListener("click", delEl);
+saveMapBtn.addEventListener("click", saveMap);
+delMapBtn.addEventListener("click", delMap);
+uploadImgBtn.addEventListener("click", uploadImg);
 

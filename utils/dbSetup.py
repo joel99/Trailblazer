@@ -18,6 +18,7 @@ TABLES:
 -User
 -UserProfile
 -Map
+-Page
 -Node
 -Edge
 
@@ -125,6 +126,7 @@ class Map(Base):
     nodes = relationship("Node", back_populates="nodeMap") #one to many
     edges = relationship("Edge", back_populates="edgeMap") #one to many
     creator = relationship("User", back_populates="maps") #many to one
+    pages = relationship("Page", back_populates="pageMap", order_by="Page.pageNum") #one to many
     
     #followers, eventually
     def __init__(self, name, creatorID):
@@ -132,7 +134,7 @@ class Map(Base):
         self.creatorID = creatorID
         self.published = 1 #to change, currently published as default
     
-    def updateTimestamp():
+    def updateTimestamp(self):
         updateDate = datetime.datetime.now()
 
     def asPreview(self):
@@ -142,7 +144,45 @@ class Map(Base):
             "creatorName" : self.creator.username,
             "mapID" : self.mapID
         }
-                
+
+#mainly for storing images
+class Page(Base):
+    __tablename__ = "Pages"
+
+    pageID = Column(Integer, primary_key = True)
+    mapID = Column(Integer, ForeignKey("Maps.mapID"))
+    pageNum = Column(Integer)
+    backgroundImage = Column(String)
+    pageName = Column(String)
+    #Relationships
+    pageMap = relationship("Map", back_populates="pages") #many to one
+    nodes = relationship("Node", back_populates="nodePage") #one to many
+    edges = relationship("Edge", back_populates="edgePage") #one to many
+    
+    def __init__(self, mapID, pageNum, d): #filtering for new pages are already done
+        self.mapID = mapID
+        self.pageNum = int(pageNum)
+        self.backgroundImage = "defaultBackgroundImage.png"
+        self.update(d)
+        
+    def update(self, d):
+        self.pageNum = int(d["pageNum"])
+        self.backgroundImage = int(d["backgroundImage"])
+        self.pageName = d["pageName"]
+        
+    def asDict(self):
+        ret = {}
+        ret["pageNum"] = self.pageNum
+        ret["backgroundImage"] = self.backgroundImage
+        ret["pageName"] = self.pageName
+        ret["nodes"] = []
+        for node in self.nodes:
+            ret["nodes"].append(node.asDict())
+        ret["edges"] = []
+        for edge in self.edges:
+            ret["edges"].appen(edge.asDict())
+        
+    
 class Node(Base):
     __tablename__ = "Nodes"
 
@@ -155,11 +195,13 @@ class Node(Base):
     settings = Column(String)
     desc = Column(String)
     name = Column(String)
+    pageID = Column(Integer, ForeignKey("Pages.pageID"))
     
     #Pretend to be an undirected
     #Relationships
     nodeMap = relationship("Map", back_populates="nodes") #many to one
-
+    nodePage = relationship("Page", back_populates="nodes") #many to one
+    
     def add_adjacencies(self, *nodes): #pointer to node list
         for node in nodes:
             Edge(self, node) #creates an edge - we don't worry about duplicates because db takes care of it
@@ -174,11 +216,27 @@ class Node(Base):
         allNodes.extend([x.higherNode for x in self.lowerEdges])
         return allNodes
 
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-    
-    
+    def __init__(self, d, page):
+        self.update(d)
+        self.page = page
+
+    def update(self, d):
+        self.x = int(d["x"])
+        self.y = int(d["y"])
+        self.settings = d["settings"]
+        self.desc = d["desc"]
+        self.name = d["name"]
+
+    def asDict():
+        ret = {
+            "x" : self.x,
+            "y" : self.y,
+            "settings" : self.settings,
+            "desc" : self.desc,
+            "name" : self.name
+        }
+        return ret
+        
 class Edge(Base):
     __tablename__ = "Edges"
     
@@ -187,6 +245,7 @@ class Edge(Base):
 
     settings = Column(String)
     weight = Column(Integer)
+    pageID = Column(Integer, ForeignKey("Pages.pageID"))
     
     lowerID = Column(Integer,
                       ForeignKey('Nodes.nodeID'),
@@ -198,7 +257,8 @@ class Edge(Base):
     
     #Relationships
     edgeMap = relationship("Map", back_populates="edges") #many to one
-
+    edgePage = relationship("Page", back_populates="edges") #many to one
+    
     lowerNode = relationship(Node,
                              primaryjoin=lowerID==Node.nodeID,
                              backref='lowerEdges')
@@ -207,15 +267,29 @@ class Edge(Base):
                               primaryjoin=higherID==Node.nodeID,
                               backref='higherEdges')
     
-    def __init__(self, n1, n2): #prevent duplicates 
+    def __init__(self, n1, n2, d, page): #prevent duplicates 
         if n1.id < n2.id:
             self.lowerNode = n1
             self.higherNode = n2
         else:
             self.lowerNode = n2
             self.higherNode = n1
-        weight = 0 #replace with x y thing
-            
+        self.update(d)
+        self.page = page
+
+    def update(self, d):
+        self.settings = d["settings"]
+        self.weight = int(d["weight"])
+
+    def asDict():
+        ret = {
+            "settings" : self.settings,
+            "weight" : self.weight,
+            "n1" : self.lowerID,
+            "n2" : self.higherID
+        }
+        return ret
+        
 # END CLASS DEFINITIONS ======================================
 
 

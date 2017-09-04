@@ -17,9 +17,11 @@ var width = editorCanvas.getBoundingClientRect().width;
 var height = editorCanvas.getBoundingClientRect().height;
 var pgNum = document.getElementById("pgNum");
 var pgTitle = document.getElementById("pgTitle");
-
+var mapID = document.getElementById("mapID").innerHTML;
 var mousex, mousey;
+var canvasData = {}; //tracks all data and ids and bs
 
+//FIX MOUSE BUG...
 editorCanvas.addEventListener("mousemove", function(e) {
     mousex = e.offsetX;
     mousey = e.offsetY;
@@ -59,25 +61,26 @@ var setPage = function(num){
     clrMonitor();
 
     //deactivate current page (if available)
-    var page = getActivePage();
-    if (page != null){
-	for (i = 0; i < page.children.length; i++)
-	    page.childNodes[i].setAttribute("visibility", "hidden");	
-    }
-
+    hidePage(activePageCtr);
+    /*
+      var page = getActivePage();
+      if (page != null){
+      for (i = 0; i < page.children.length; i++){
+      page.childNodes[i].setAttribute("visibility", "hidden");
+      }
+      }
+    */
     //activate new page
     activePageCtr = num;
     page = getActivePage();
-    page.setAttribute("id", "viewport");
     
-    pgNum.innerHTML = page.getAttribute(activePageCtr+1);
-    pgTitle.innerHTML =  page.getAttribute("name");
-
-    for (i = 0; i < page.children.length; i++){
-	var child = page.childNodes[i];
-	child.setAttribute("visibility", "visible");
-    }
-    
+    showPage(activePageCtr);
+    /*
+      for (i = 0; i < page.children.length; i++){
+      var child = page.childNodes[i];
+      child.setAttribute("visibility", "visible");
+      }
+    */
 }
 
 var toNextPage = function(){
@@ -85,8 +88,9 @@ var toNextPage = function(){
 	logStatus("You're on the last page");
     }
     else {
+	hidePage(activePageCtr);
 	activePageCtr += 1;
-	setPage(activePageCtr);
+	showPage(activePageCtr);
     }
 }
 
@@ -95,17 +99,35 @@ var toPrevPage = function(){
 	logStatus("You're on the first page");	
     }
     else {
+	hidePage(activePageCtr);
 	activePageCtr -= 1;
-	setPage(activePageCtr);
+	showPage(activePageCtr);
+    }
+}
+
+var hidePage = function(num){
+    var page = getPage(num);
+    if (page != null){
+	page.setAttribute("visibility", "hidden");
+    }
+
+}
+
+var showPage = function(num){
+    var page = getPage(num);
+    if (page != null){
+	page.setAttribute("visibility", "visible");
+	page.setAttribute("id", "viewport");
+	pgNum.innerHTML = num+1;
+	pgTitle.innerHTML =  page.getAttribute("name");
     }
 }
 
 var addPage = function(){
-
     //construct the page
     totalPages++;
     var p = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    p.setAttribute("name", "Example");
+    p.setAttribute("name", "Default Page Name");
     p.setAttribute("imgUrl", "white.png");//smh
     
     var d = document.createElement("defs");
@@ -131,9 +153,10 @@ var addPage = function(){
     p.appendChild(r);
 
     
-    if (totalPages == 1){
+    if (totalPages == 1){ //this was our first page
 	activePageCtr = 0;
-	editorCanvas.appendChild(p);		
+	editorCanvas.appendChild(p);
+	showPage(0);
 	p.setAttribute("id", "viewport");
     }
     else if (activePageCtr == totalPages - 2){//we were on the last page
@@ -172,6 +195,7 @@ var delPage = function(){
 
 	editorCanvas.removeChild(curPage);
 	totalPages -= 1;
+	showPage(activePageCtr);
     }
 }
 
@@ -373,10 +397,6 @@ var updateCanvas = function(e){
 }
 
 var distance = function(x1,y1,x2,y2){
-    //x1 = parseInt(x1);
-    //y1 = parseInt(y1);
-    //x2 = parseInt(x2);
-    //y2 = parseInt(y2);
     return Math.sqrt( Math.pow((x2-x1), 2) + Math.pow((y2-y1), 2) );
 }
 
@@ -666,227 +686,6 @@ var updateField = function(){
     refreshMonitor(clickedEl);
 }
 
-//LOADING PAGE : needs refactoring
-var globalMapData = {};
-
-var loadMap = function(mapDataWrap){
-    //console.log("loading");
-    //console.log(mapDataWrap);
-    loadTitle(mapDataWrap["mapName"]); //UNCOMMENT
-    
-    
-    if (mapDataWrap["data"] == null) {
-	totalPages = 0; //load
-	idCount = 0; //simple id scheme, just count up every time element is made
-	addPage();
-	page = getActivePage();
-	
-    	pgNum.innerHTML = page.getAttribute('num');
-    	pgTitle.innerHTML =  page.getAttribute("name");
-	mode = DEFAULT;
-    } 
-    else {
-    	var canvasJSON = JSON.parse(mapDataWrap["data"]);
-	totalPages = 0;
-	console.log(canvasJSON);
-	idCount = canvasJSON["idCt"];
-	var pageData;
-	for (i = 0; i < canvasJSON["canvas"].length; i++){
-	    pageData = canvasJSON["canvas"][i];
-	    var page = addPage();
-	    page.setAttribute( "name", pageData["name"] );
-	    //page.setAtribute( "num", pageData["num"] ); //not sure we need this
-	    page.setAttribute( "imgUrl", pageData["imgUrl"] );
-	    //set the img in the thing
-	    page.firstChild.setAttribute("xlink:href", pageData["imgUrl"]);
-	    page.setAttribute( "isCurrent", "true" );
-	    page.setAttribute( "id", "viewport" );
-
-	    var item;
-
-	    //console.log("PAGE DATA LENGTH IS " + pageData["data"].length);
-	    
-	    for (j = 0; j < pageData["data"].length; j++){//the first one is itself for some reason
-		item = pageData["data"][j];
-		//console.log(item);
-		//console.log("registering item " + item["type"]);
-		
-		var el;
-		switch (item["type"]){
-		    //name, id
-		case "pt":
-		    el = makePt(item["cx"], item["cy"], item["r"]);
-		    el.addEventListener("click", elClick);
-		    break;
-		case "node":
-		    el = makeNode(item["cx"], item["cy"], item["r"]);
-		    el.addEventListener("click", elClick);
-		    break;
-		case "cnxn":
-		    el = makeCnxn(item["cx"], item["cy"], item["r"]);
-		    el.setAttribute("link", item["link"]);
-		    el.setAttribute("linkDist", item["linkDist"]);
-		    el.addEventListener("click", elClick);
-		    break;
-		case "path":
-		    el = makePath(item["x1"], item["y1"], item["x2"], item["y2"]);
-		    el.setAttribute("p1", item["p1"]);
-		    el.setAttribute("p2", item["p2"]);
-		    el.setAttribute("stroke-width", item["width"]);
-		    el.setAttribute("dist", item["dist"]);
-		    el.setAttribute("active", "false");
-		    el.addEventListener("click", elClick);
-		    //console.log("active set to false");
-		    break;
-		}
-		
-		el.setAttribute("name", item["name"]);
-		el.setAttribute("id", item["id"]);
-		el.setAttribute("visibility", "hidden");
-		page.appendChild(el);
-		//console.log("j is " + j);
-		//console.log(el);
-	    }
-	    
-	}
-	
-	totalPages = canvasJSON["pages"];
-
-	if (totalPages != 0){
-	    
-	    setPage(1);
-	}
-
-    }
-    
-}
-
-
-var loadMapWrap = function(){//initalization script
-    var mapData;
-    $.ajax({	   
-	url: "/loadData/",
-	type: "POST",
-	//data: {"mapId" : id},
-	dataType: "json",
-	success: function(data) {
-	    loadMap(data);
-	    console.log("wrapper");
-	    console.log(data);
-	    globalMapData["data"] = data;
-	},
-	error: function() {
-	    console.log("unable to pull Data");
-	}
-    });
-}
-
-//SAVING AND LOADING
-var saveMap = function(){
-    var mapJSON = canvasToJSON();
-    console.log(mapJSON);
-    $.ajax({
-	url : "/saveData/",
-	type: "POST",
-	data: {"canvas": mapJSON},
-	dataType: "json",
-	success: function(response) {
-	    console.log("map saved");
-	},
-	error: function(data) {
-	    console.log(data);
-	    console.log("nope");
-	}
-    });
-    return null;
-}
-
-var canvasToJSON = function(){
-
-    //not sure if we need pages
-    var canvasJSON = {"canvas": [], "pages" : totalPages, "idCt" : idCount };
-    for (i = 0; i < editorCanvas.children.length; i++){
-	var child = editorCanvas.childNodes[i]; //store pages
-	var pageDict = {"name": child.getAttribute("name"), 
-			"num": child.getAttribute("num"),
-			"imgUrl": child.getAttribute("imgUrl"),
-			"data" : []}; 
-	canvasJSON["canvas"].push(pageDict);
-	for (j = 0; j < child.children.length; j++){//first two are irrelevant
-	    var item = child.childNodes[j];
-	    if (item.getAttribute("name") == null || item.getAttribute("name") == "") 
-	    	continue;
-	    var itemDict = {"name": item.getAttribute("name"),
-			    "id": item.getAttribute("id"),
-			    "type": item.getAttribute("customType"),
-			   }//add color here
-
-	    switch (item.getAttribute("customType")){
-	    case "pt":
-	    case "node":
-		itemDict["cx"] = item.getAttribute("cx");
-		itemDict["cy"] = item.getAttribute("cy");
-		itemDict["r"] = item.getAttribute("r");
-		break;
-	    case "cnxn":
-		itemDict["cx"] = item.getAttribute("cx");
-		itemDict["cy"] = item.getAttribute("cy");
-		itemDict["r"] = item.getAttribute("r");
-		itemDict["link"] = item.getAttribute("link");
-		itemDict["linkDist"] = item.getAttribute('linkDist');
-		break;
-	    case "path":
-		itemDict["x1"] = item.getAttribute("x1");
-		itemDict["y1"] = item.getAttribute("y1");
-		itemDict["x2"] = item.getAttribute("x2");
-		itemDict["y2"] = item.getAttribute("y2");
-		itemDict["p1"] = item.getAttribute("p1");
-		itemDict["p2"] = item.getAttribute("p2");
-		itemDict["width"] = item.getAttribute("stroke-width");
-		itemDict["dist"] = item.getAttribute("dist");
-		break;
-	    }
-	    pageDict["data"].push(itemDict);
-	    /*
-	      switch (item.getAttribute("customType")){
-	      case "pt":
-	      case "node":
-	      itemDict.cx = item.getAttribute("cx");
-	      itemDict.cy = item.getAttribute("cy");
-	      itemDict.r = item.getAttribute("r");
-	      break;
-	      case "cnxn":
-	      itemDict.cx = item.getAttribute("cx");
-	      itemDict.cy = item.getAttribute("cy");
-	      itemDict.r = item.getAttribute("r");
-	      itemDict.link = item.getAttribute("link");
-	      break;
-	      case "path":
-	      itemDict.x1 = item.getAttribute("x1");
-	      itemDict.y1 = item.getAttribute("y1");
-	      itemDict.x2 = item.getAttribute("x2");
-	      itemDict.y2 = item.getAttribute("y2");
-	      itemDict.p1 = item.getAttribute("p1");
-	      itemDict.p2 = item.getAttribute("p2");
-	      itemDict.width = item.getAttribute("stroke-width");
-	      break;
-	      }
-	      pageDict["data"].push(itemDict);
-	    */
-	}
-    }
-    console.log(JSON.stringify(canvasJSON));
-    //    return canvasJSON;
-    return JSON.stringify(canvasJSON)
-}
-
-var refreshIDs = function(){
-    //to prevent overflow (long term sustainability)
-}
-
-//i need to do the image stuff on the page.
-
-
 var pythDist = function(x1, y1, x2, y2){
     
     var dx = x2 - x1;
@@ -907,7 +706,7 @@ var form = document.getElementById('form_upload');
 var fileSelect = document.getElementById('upload_input');
 var uploadButton = document.getElementById('upload-button');
 
-var imgUpload = function(event){
+var uploadImg = function(event){
 
     
     event.preventDefault();
@@ -990,7 +789,211 @@ var imgUpload = function(event){
 
 
 var initializeMap = function(){
-    addPage();
+    $.ajax({	   
+	url: "/loadData/",
+	type: "POST",
+	data: {"mapID" : mapID},
+	dataType: "json",
+	success: function(data) {
+	    loadMap(data);
+	},
+	error: function() {
+	    console.log("unable to pull Data");
+	}
+    });
 }
 
-$(document).ready(initializeMap());
+var loadMap = function(mapData){
+    canvasData["mapID"] = mapID;
+    canvasData["mapTitle"] = mapTitle;
+    if (mapData["data"] == null) { //brand new map
+	addPage();
+	setMode(DEFAULT);	
+    } 
+    else {
+    	var canvasJSON = JSON.parse(mapData["data"]);
+	totalPages = 0;
+	idCount = canvasJSON["idCt"];
+	var pageData;
+	for (i = 0; i < canvasJSON["canvas"].length; i++){
+	    pageData = canvasJSON["canvas"][i];
+	    
+	    
+	    var page = addPage();
+	    page.setAttribute( "name", pageData["name"] );
+	    //page.setAtribute( "num", pageData["num"] ); //not sure we need this
+	    page.setAttribute( "imgUrl", pageData["imgUrl"] );
+	    //set the img in the thing
+	    page.firstChild.setAttribute("xlink:href", pageData["imgUrl"]);
+	    page.setAttribute( "isCurrent", "true" );
+	    page.setAttribute( "id", "viewport" );
+
+	    var item;
+
+	    //console.log("PAGE DATA LENGTH IS " + pageData["data"].length);
+	    
+	    for (j = 0; j < pageData["data"].length; j++){//the first one is itself for some reason
+		item = pageData["data"][j];
+		//console.log(item);
+		//console.log("registering item " + item["type"]);
+		
+		var el;
+		switch (item["type"]){
+		    //name, id
+		case "pt":
+		    el = makePt(item["cx"], item["cy"], item["r"]);
+		    el.addEventListener("click", elClick);
+		    break;
+		case "node":
+		    el = makeNode(item["cx"], item["cy"], item["r"]);
+		    el.addEventListener("click", elClick);
+		    break;
+		case "cnxn":
+		    el = makeCnxn(item["cx"], item["cy"], item["r"]);
+		    el.setAttribute("link", item["link"]);
+		    el.setAttribute("linkDist", item["linkDist"]);
+		    el.addEventListener("click", elClick);
+		    break;
+		case "path":
+		    el = makePath(item["x1"], item["y1"], item["x2"], item["y2"]);
+		    el.setAttribute("p1", item["p1"]);
+		    el.setAttribute("p2", item["p2"]);
+		    el.setAttribute("stroke-width", item["width"]);
+		    el.setAttribute("dist", item["dist"]);
+		    el.setAttribute("active", "false");
+		    el.addEventListener("click", elClick);
+		    //console.log("active set to false");
+		    break;
+		}
+		
+		el.setAttribute("name", item["name"]);
+		el.setAttribute("id", item["id"]);
+		el.setAttribute("visibility", "hidden");
+		page.appendChild(el);
+		//console.log("j is " + j);
+		//console.log(el);
+	    }
+	    
+	}
+	
+	totalPages = canvasJSON["pages"];
+
+	if (totalPages != 0){
+	    
+	    setPage(1);
+	}
+
+    }
+    
+}
+
+//SAVING AND LOADING
+//for saving, I need map data, page data
+var saveMap = function(){
+
+    newData = JSON.stringify(prepSave());
+    
+    $.ajax({
+	url : "/saveData/",
+	type: "POST",
+	data: {"mapData": newData},
+	dataType: "json",
+	success: function(response) {
+	    console.log("map saved");
+	},
+	error: function(data) {
+	    console.log("error saving");
+	}
+    });
+    return null;
+
+    //only assign new IDs internally, use ctr for other purposes
+}
+
+//return all necessary data for saving
+var prepSave = function(){
+
+    //not sure if we need pages
+    var newData = {"mapID": mapID, "pages": [] };
+    for (page in canvasData){
+	if (page["status"] != "a"){
+	    curPageRet = {"data" :
+			  {"name": page["name"],
+			   "pageNum": page["pageNum"],
+			   "backgroundImage": page["backgroundImage"]
+			  }
+			 };
+	    //NEW PAGE PACKAGING
+	    if (page["status"] == "u"){
+		curPageRet["id"] = "u" + page["id"];
+		curNodes = [];
+		for (node in page["nodes"]){ //package page's nodes
+		    curNodeEntry = {};
+		    if (node["status"] == "u" || node["status"] == "n"){
+			curNodeEntry["id"] = node["status"] + node["id"];
+			curNodeEntry["data"] = node["data"];
+			curNodes.push(curNodeEntry);
+		    }
+		    else {
+			console.log("node unchanged, pass");
+		    }
+		}
+		curEdges = [];
+		for (edge in page["edges"]){ //package page's edges
+		    curEdgeEntry = {};
+		    if (edge["status"] == "u" || edge["status"] == "n"){
+			curEdgeEntry["id"] = edge["status"] + edge["id"];
+			curEdgeEntry["data"] = edge["data"];
+			if (edge["status"] == "n"){
+			    curEdgeEntry["node1ID"] = edge["node1ID"];
+			    curEdgeEntry["node2ID"] = edge["node2ID"];
+			}
+			curEdges.push(curEdgeEntry);
+		    }
+		    else {
+			console.log("node unchanged, pass");
+		    }
+		}
+
+	    }
+
+	    //NEW PAGE PACKAGING
+	    else if (page["status"] == "n"){
+		curPageRet["id"] = "n" + page["id"];
+		curNodes = [];
+		for (node in page["nodes"]){ //package page's nodes
+		    curNodeEntry = {};
+
+		    curNodeEntry["id"] = node["status"] + node["id"];
+		    curNodeEntry["data"] = node["data"];
+		    curNodes.push(curNodeEntry);
+		    
+		}
+		curEdges = [];
+		for (edge in page["edges"]){ //package page's edges
+		    curEdgeEntry = {};
+		    
+		    curEdgeEntry["id"] = edge["status"] + edge["id"];
+		    curEdgeEntry["data"] = edge["data"];
+		    
+		    curEdgeEntry["node1ID"] = edge["node1ID"];
+		    curEdgeEntry["node2ID"] = edge["node2ID"];
+		    
+		    curEdges.push(curEdgeEntry);
+		}
+	    }
+	    else {
+		console.log("page to json error");
+	    }
+	    newData["pages"].push(curPageRet);
+	}
+    }
+    return newData;
+}
+
+
+$(document).ready(
+    initializeMap
+);
+
+//TODO: set all statuses to "a" at beginning

@@ -49,12 +49,20 @@ def gallerySearch():
 def mymaps():
     if isLoggedIn():
         galData = gallery.userFind( getUserID() )
+        print galData
         return render_template( "gallery.html", isLoggedIn = isLoggedIn(), data = galData )
     else: #put in an error page
         return redirect(url_for("root"))
         #return render_template()
 
+# View map =====================================
+@app.route("/map/<mapID>")
+def mapView(mapID):
+    data = mapUtil.getMapData(mapID)
+    return render_template( "mapView.html", isLoggedIn = isLoggedIn() , mapData = data)
 
+        
+        
 # Editing maps ==================================
 
 @app.route("/map/<mapID>/edit")
@@ -81,16 +89,17 @@ def delMap():
 
 
 @app.route("/saveData/", methods=["POST"])
-def mapSave():
-    mapData = request.form.get("canvas")
-    mapID = session["mID"]
-    mapUtil.store( mapID, mapData )
-    return mapData
+def mapSave():   
+    mapData = request.form["mapData"]
+    mapUtil.store( json.loads(mapData) )
+    return json.dumps({"success": "true"})
 
-
+ 
 @app.route("/loadData/", methods=["POST"])
 def mapLoad():
-    mapData = mapUtil.getMapData(int(session["mID"])) 
+    mapID = int(request.form["mapID"])
+    mapData = mapUtil.getMapData(mapID)
+    mapData["updateDate"] = str(mapData["updateDate"])
     return json.dumps(mapData)
 
 
