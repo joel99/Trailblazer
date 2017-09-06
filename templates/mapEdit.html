@@ -3,9 +3,16 @@
 
 {% block content %}
 
-<div class="row">
-<h2 class="col-md-8 page-header">Map Editor : <span id="mapTitle">{{mapData["title"]}}</span> </h2>
-<h2 class="col-md-4 page-header"> ID : <span id="mapID">{{mapData["mapID"]}}</span></h2>
+<div class="row page-header">
+  <h2 class="col-md-6">Map Editor :
+    <span id="mapTitle">{{mapData["title"]}}</span>
+  </h2>
+  <h2 class="col-md-3">
+    ID : <span id="mapID">{{mapData["mapID"]}}</span>
+  </h2>
+  <h2 class="col-md-3 text-right">
+    <a href="/map/{{mapData['mapID']}}">View Mode</a>
+  </h2>
 </div>
 <div class="row">
   <div class="col-md-2">
@@ -69,8 +76,8 @@
 
 {% block js %}
 
-<script src="/static/editor.js"></script>
-<script src="/static/editorBtns.js"></script>
+<script src="/static/js/editor.js"></script>
+<script src="/static/js/editorBtns.js"></script>
 <!--<script src="/static/require.js"></script>-->
 <!--<script src="/static/svg-pan-zoom.js"></script>-->
 {% endblock %}

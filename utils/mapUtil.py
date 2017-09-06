@@ -67,6 +67,12 @@ def store(mapData):
     curMap.guidCtr = int(mapData["guidCtr"])
 
     pagesToProcess = mapData["pages"]
+    pagesToDelete = mapData["deletePages"]
+    for pageID in pagesToDelete:
+        curPage = session.query(Page).filter(Page.pageID == pageID).one()
+        session.delete(curPage)
+        session.commit()
+        
     for page in pagesToProcess:
         if page["status"] == "u":
             pageID = int(page["id"])

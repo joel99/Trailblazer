@@ -9,7 +9,11 @@ engine = create_engine('postgresql+psycopg2://postgres:picfic@localhost/trailbla
 Session.configure(bind=engine)
 
 def getPage( userID, PageNum=1, searchQuery=""):
-    return mapUtil.getPage( PageNum, searchQuery, userID )
+    session = Session()
+    curMaps = session.query(Map).all()
+    ret = [curMap.asPreview() for curMap in curMaps]
+    session.close()
+    return ret
 
 #Map database functions for the gallery
 

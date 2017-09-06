@@ -32,8 +32,8 @@ def galleryRoute():
 
 @app.route("/gallery/browse/page/<pageNum>")
 def galleryPage(pageNum):
-    data = gallery.getPage(getUserID(), pageNum) #<-- get back later
-    return render_template( "gallery.html", isLoggedIn = isLoggedIn() )
+    galData = gallery.getPage(getUserID(), pageNum) #<-- get back later
+    return render_template( "gallery.html", isLoggedIn = isLoggedIn(), data = galData )
 
 
 @app.route("/gallery/search/") 
@@ -59,7 +59,10 @@ def mymaps():
 @app.route("/map/<mapID>")
 def mapView(mapID):
     data = mapUtil.getMapData(mapID)
-    return render_template( "mapView.html", isLoggedIn = isLoggedIn() , mapData = data)
+    ownsMapBool = False
+    if isLoggedIn():
+        ownsMapBool = mapUtil.ownsMap(getUserID(), mapID)
+    return render_template( "mapView.html", isLoggedIn = isLoggedIn() , mapData = data, ownsMap = ownsMapBool)
 
         
         

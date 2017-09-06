@@ -1,50 +1,60 @@
 {% extends "base.html" %}
 
 {% block content %}
-     <div class="col-md-2">
-      <p>MODE: </p>
-      <button id="clrBtn" class="btn btn-default edit">Clear Query</button><br>
-      <button id="srcNodeBtn" class="btn btn-default edit">Source Node</button><br>
-      <button id="destNodeBtn" class="btn btn-default edit">Destination Node</button><br>
-      <button id="calcBtn" class="btn btn-default edit">Calculate Path!</button><br>
-    </div>
+<div class="row page-header">
+  <h2 class="col-md-6">Map View : <span id="mapTitle">{{mapData["title"]}}</span> </h2>
+  <h2 class="col-md-2"> ID : <span id="mapID">{{mapData["mapID"]}}</span></h2>
+  <h2 class="col-md-3 text-right">
+    {% if ownsMap %}
+    <a href="/map/{{mapData['mapID']}}/edit">Edit Mode</a>
+    {% endif %}
+  </h2>
+</div>
+<div class="row">
+  <div class="col-md-2">
+    <p>MODE: </p>
+    <button id="clrBtn" class="btn btn-default edit">Clear Query</button><br>
+    <button id="srcNodeBtn" class="btn btn-default edit">Source Node</button><br>
+    <button id="destNodeBtn" class="btn btn-default edit">Destination Node</button><br>
+    <button id="calcBtn" class="btn btn-default edit">Calculate Path!</button><br>
+  </div>
+  
 
-
-    <div class="col-md-8">
-      <svg id="editorCanvas" xmlns="http://www.w3.org/2000/svg" width = "1000", height = "500" style="border:1px solid #000000"/>
-
-
+  <div class="col-md-8">
+    <svg id="editorCanvas" xmlns="http://www.w3.org/2000/svg" width = "1000", height = "500" style="border:1px solid #000000"/>
+    
+    
           <h1>
     	    <div id="mapTitle" class="messagediv"></div>
           </h1>
           Page <span id="pgNum"></span>:  <span id="pgTitle"></span>
-
+	  
           
           <br>
-          <p>Status: <span id="status"></span></p>
-          <br>
-          <div id="monitor">
-
-          </div>
-
-          <div id="directions">
-
-          </div>
-
-    </div>
-    <div class="col-md-2">
-      <button id="nextPgBtn" class="btn btn-default edit">Next Page</button><br>
-      <button id="prevPgBtn" class="btn btn-default edit">Prev Page</button><br>
-    </div>
+    <p>Status: <span id="status"></span></p>
     <br>
+    <div id="monitor">
+      
+    </div>
+    
+    <div id="directions">
+      
+    </div>
+
+    </div>
+  <div class="col-md-2">
+    <button id="nextPgBtn" class="btn btn-default edit">Next Page</button><br>
+    <button id="prevPgBtn" class="btn btn-default edit">Prev Page</button><br>
+  </div>
+</div>
 
 {% endblock %}
 
 
 {% block js %}
-    <script src="../static/editor.js"></script>
-    <script src="../static/mapAlgo.js"></script>
-    <script src="../static/viewBtns.js"></script>
+    <script src="/static/js/editor.js"></script>
+    <script src="/static/js/mapAlgo.js"></script>
+    <script src="/static/js/viewBtns.js"></script>
     <!--<script src="../static/require.js"></script>-->
     <!--<script src="../static/svg-pan-zoom.js"></script>-->
 {% endblock %}

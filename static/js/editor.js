@@ -180,30 +180,41 @@ var delPage = function(){ //not done...
     //TODO : ADD PROMPT!
     if (totalPages() <= 1) logStatus("Can't remove page");
     else {
+	//Do the DOM
+	var curPageDOM = getActivePageDOM();
+	editorCanvas.removeChild(curPageDOM);
+
 	var curPage = getActivePage();
-	if (curPage["status"] == "r") { //we only care if it's registered
-	    
+	//take care of backend
+
+	//we can't have connections on a 1 page map
+	for (i = 0; i < curPage["nodes"].length; i++){ //optimize!
+	    var child = curPage["nodes"][i];
+	    if (child["customType"] == "cnxn")
+		clrCnxn(child);
 	}
-	canvasData["delete"].add(curPage["id"]);
+
+
+	if (curPage["status"] == "r") { 
+	    canvasData["deletePages"].push(curPage["id"]);
+	}
 	logStatus("page removed");
-	canvasData["pages"][canvasData["activePageCtr"]]["id"] = "d"; //d for deleteee	
-	if (canvasData["activePageCtr"] = totalPages - 1){ //we're on last page
+	
+	if (canvasData["activePageCtr"] == totalPages() - 1){ //we're on last page
+	    canvasData["pages"].splice(canvasData["activePageCtr"], 1);
 	    canvasData["activePageCtr"] -= 1;
+
 	}
-	else{
-	    for (i = canvasData["activePageCtr"]; i < totalPages(); i++){
+	else{	    
+	    for (i = canvasData["activePageCtr"] + 1; i < totalPages(); i++){
+		getPage(i)["pageNum"] -= 1;
 		//update everyone else's pageNum
-	    } 
-	    //we can't have connections on a 1 page map
-	    for (i = 0; i < curPage.children.length; i++){
-		var child = curPage.childNodes[i];
-		if (child.getAttribute("customType") == "cnxn")
-		    clrCnxn(child);
 	    }
-	    
-	    editorCanvas.removeChild(curPage);
-	    showPage(canvasData["activePageCtr"]);
+	    canvasData["pages"].splice(canvasData["activePageCtr"], 1);
 	}
+	
+	
+	showPage(canvasData["activePageCtr"]);
     }
 }
 
@@ -929,6 +940,7 @@ var initializeMap = function(){
 var loadMap = function(mapData){
     canvasData["mapID"] = mapID;
     canvasData["mapTitle"] = mapTitle;
+    canvasData["deletePages"] = [];
     if (mapData["pages"].length == 0) { //brand new map
 	addPage();
 	setMode(DEFAULT);	
@@ -936,6 +948,8 @@ var loadMap = function(mapData){
     else {
 	console.log("Map loaded.");
 	canvasData = mapData;
+	canvasData["deletePages"] = [];
+	
 	for (i = 0; i < totalPages(); i++){
 	    var curPage = getPage(i);
 	    curPage["status"] = "r";
@@ -1002,7 +1016,9 @@ var saveMap = function(){
 var prepSave = function(){
 
     //not sure if we need pages
-    var newData = {"mapID": canvasData["mapID"], "pages": [] , "guidCtr" : canvasData["guidCtr"]};
+    var newData = {"mapID": canvasData["mapID"],
+		   "deletePages" : canvasData["deletePages"],
+		   "pages": [] , "guidCtr" : canvasData["guidCtr"]};
     console.log(canvasData["pages"]);
     for (i = 0; i < totalPages(); i++){
 	console.log("we trying");
