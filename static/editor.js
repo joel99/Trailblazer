@@ -19,7 +19,14 @@ var pgNum = document.getElementById("pgNum");
 var pgTitle = document.getElementById("pgTitle");
 var mapID = document.getElementById("mapID").innerHTML;
 var mousex, mousey;
-var canvasData = {}; //tracks all data and ids and bs
+var canvasData = {
+    "mapID": mapID,
+    "title": pgTitle.innerHTML,
+    "updateDate": 0,
+    "pages": [],
+    "activePageCtr" : 0,
+    "guidCtr" : 0
+}; 
 
 //FIX MOUSE BUG...
 editorCanvas.addEventListener("mousemove", function(e) {
@@ -34,87 +41,89 @@ var logStatus = function(s){
 //GENERAL UI
 
 /* Page components */
-var mapTitle = document.getElementById("mapTitle");
+var mapTitle = document.getElementById("mapTitle").innerHTML;
 var monitor = document.getElementById("monitor");
 
 //Information
 //var mapName = document.getElementById("mapName");
 //var pgName = document.getElementById("pgName");
 
+var getNewID = function(){
+    canvasData["guidCtr"] += 1;
+    return canvasData["guidCtr"];
+}
+
 /* Page js */
 var totalPages = 0; //load
 var idCount = 0; //simple id scheme, just count up every time element is made
-var activePageCtr = 0;
-
-var getActivePage = function(){
-    return editorCanvas.childNodes[activePageCtr];
-}
-
 
 var getPage = function(num){
+    return canvasData["pages"][num];
+}
+
+var getPageDOM = function(num){
     return editorCanvas.childNodes[num];
 }
 
+var getActivePage = function(){
+    return getPage(canvasData["activePageCtr"]);
+}
+
+var getActivePageDOM = function(){
+    return getPageDOM(canvasData["activePageCtr"]);
+}
+
+// pre : number
+// post: activePage set to page <num>
 var setPage = function(num){
 
     clrActive();
     clrMonitor();
 
-    //deactivate current page (if available)
-    hidePage(activePageCtr);
-    /*
-      var page = getActivePage();
-      if (page != null){
-      for (i = 0; i < page.children.length; i++){
-      page.childNodes[i].setAttribute("visibility", "hidden");
-      }
-      }
-    */
-    //activate new page
-    activePageCtr = num;
-    page = getActivePage();
-    
-    showPage(activePageCtr);
-    /*
-      for (i = 0; i < page.children.length; i++){
-      var child = page.childNodes[i];
-      child.setAttribute("visibility", "visible");
-      }
-    */
+    hidePage(canvasData["activePageCtr"]);
+    canvasData["activePageCtr"] = num;
+    showPage(canvasData["activePageCtr"]);
 }
 
+// pre :
+// post: activePage switched to next page
 var toNextPage = function(){
-    if (activePageCtr == totalPages - 1){
+    if (canvasData["activePageCtr"] == totalPages() - 1){
 	logStatus("You're on the last page");
     }
     else {
-	hidePage(activePageCtr);
-	activePageCtr += 1;
-	showPage(activePageCtr);
+	hidePage(canvasData["activePageCtr"]);
+	canvasData["activePageCtr"] += 1;
+	showPage(canvasData["activePageCtr"]);
     }
 }
 
+// pre :
+// post: activePage switched to previous page
 var toPrevPage = function(){
-    if (activePageCtr == 0){
+    if (canvasData["activePageCtr"] == 0){
 	logStatus("You're on the first page");	
     }
     else {
-	hidePage(activePageCtr);
-	activePageCtr -= 1;
-	showPage(activePageCtr);
+	hidePage(canvasData["activePageCtr"]);
+	canvasData["activePageCtr"] -= 1;
+	showPage(canvasData["activePageCtr"]);
     }
 }
 
+// pre : number
+// post: page <num> DOM hidden
 var hidePage = function(num){
-    var page = getPage(num);
+    var page = getPageDOM(num);
     if (page != null){
 	page.setAttribute("visibility", "hidden");
     }
-
 }
 
+// pre : number
+// post: page <num> DOM revealed
 var showPage = function(num){
-    var page = getPage(num);
+    var page = getPageDOM(num);
     if (page != null){
 	page.setAttribute("visibility", "visible");
 	page.setAttribute("id", "viewport");
@@ -123,81 +132,81 @@ var showPage = function(num){
     }
 }
 
-var addPage = function(){
-    //construct the page
-    totalPages++;
-    var p = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    p.setAttribute("name", "Default Page Name");
-    p.setAttribute("imgUrl", "white.png");//smh
-    
-    var d = document.createElement("defs");
-    var pat = document.createElement("pattern");
-    pat.setAttribute('id', totalPages + "bg");
-    pat.setAttribute('patternUnits', 'userSpaceOnUse');
-    pat.setAttribute('width', 4);
-    pat.setAttribute('height', 4);
-    d.appendChild(pat);
-    var im = document.createElement("image");
-    im.setAttribute("xlink:href", "white.png")//ADD A THING
-    im.setAttribute("width", 4);
-    im.setAttribute("height", 4);
-    pat.appendChild(im);
-    p.appendChild(d);
-    var r= document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    r.setAttribute("x", 0);
-    r.setAttribute("y", 0);
-    r.setAttribute("width", width);
-    r.setAttribute("height", height);
-    r.setAttribute("id", (totalPages-1) + "bgRect");
-    r.setAttribute("fill", "url(#" + (totalPages-1) + "bg)");
-    p.appendChild(r);
-
-    
-    if (totalPages == 1){ //this was our first page
-	activePageCtr = 0;
-	editorCanvas.appendChild(p);
-	showPage(0);
-	p.setAttribute("id", "viewport");
-    }
-    else if (activePageCtr == totalPages - 2){//we were on the last page
-	editorCanvas.appendChild(p);
-	toNextPage();
-	p.setAttribute("id", "viewport");
-    }
-    
-    return p;
-
+// pre :
+// post: returns number of pages in canvasDict
+var totalPages = function(){
+    return canvasData["pages"].length;
 }
 
-var delPage = function(){
+// pre :
+// post: new page added to canvasData and DOM, returns canvasPage
+var addPage = function(){
+    //construct the page
+    
+    //CANVAS DATA
+    canvasData["pages"].push({
+	"pageNum" : totalPages(),
+	"pageName" : "Default Page Name",
+	"backgroundImage" : "defaultBackgroundImage.png",
+	"id" : getNewID(), //i have no good ideas
+	"nodes" : [],
+	"edges" : [],
+	"status" : "n"
+    });
+    
+    editorCanvas.append(makePageDOM(canvasData["pages"][totalPages()-1]));
+    
+    if (totalPages() == 1){ //this was our first page
+	canvasData["activePageCtr"] = 0;
+	showPage(0);
+    }
+    else if (canvasData["activePageCtr"] == totalPages() - 2){//we were on the last page
+	toNextPage();
+    }
+    
+    return canvasData["pages"][totalPages()-1];
+}
+
+var makePageDOM = function(pageDict){
+    var p = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    
+    p.setAttribute("name", pageDict["pageName"]);
+    p.setAttribute("id", "viewport");
+    return p;
+}
+
+var delPage = function(){ //not done...
 
     //TODO : ADD PROMPT!
-    if (totalPages == 0) logStatus("can't remove page");
+    if (totalPages() <= 1) logStatus("Can't remove page");
     else {
-	logStatus("page removed");
 	var curPage = getActivePage();
-	if (totalPages == 1){
-	    //disable thing...
-	    pgNum.innerHTML = "";
-	    pgTitle.innerHTML = "NO PAGES LEFT.";
+	if (curPage["status"] == "r") { //we only care if it's registered
+	    
+	}
+	canvasData["delete"].add(curPage["id"]);
+	logStatus("page removed");
+	canvasData["pages"][canvasData["activePageCtr"]]["id"] = "d"; //d for deleteee	
+	if (canvasData["activePageCtr"] = totalPages - 1){ //we're on last page
+	    canvasData["activePageCtr"] -= 1;
 	}
 	else{
-	    if (activePageCtr = totalPages - 1){ //we're on last page
-		activePageCtr -= 1;
-	    }
+	    for (i = canvasData["activePageCtr"]; i < totalPages(); i++){
+		//update everyone else's pageNum
+	    } 
 	    //we can't have connections on a 1 page map
 	    for (i = 0; i < curPage.children.length; i++){
 		var child = curPage.childNodes[i];
 		if (child.getAttribute("customType") == "cnxn")
 		    clrCnxn(child);
 	    }
+	    
+	    editorCanvas.removeChild(curPage);
+	    showPage(canvasData["activePageCtr"]);
 	}
-
-	editorCanvas.removeChild(curPage);
-	totalPages -= 1;
-	showPage(activePageCtr);
     }
 }
+
 
 //EDITOR UI
 const DEFAULT = 1;
@@ -244,7 +253,7 @@ var makePath = function(x1, y1, x2, y2){
     l.setAttribute("stroke-width", "4");
     l.setAttribute("customType", "path");
     l.setAttribute("active", true);
-    l.setAttribute("dist", 0);
+    l.setAttribute("weight", 0);
     
     return l;
 }
@@ -300,6 +309,8 @@ var makeCnxn = function(x, y, r){//forbid "unlinked" name
 
 }
 
+// pre : data
+// post: shadow for cur active made, added to DOM
 var makeShadow = function(x, y, r, mode){
     var s = null;
     switch(mode){
@@ -323,6 +334,12 @@ var makeShadow = function(x, y, r, mode){
 
 }
 
+var changePageStatus = function(){
+    if (getActivePage()["status"] != "n") {
+	getActivePage()["status"] = "u";
+    }
+}
+
 var addEl = function(x, y, type){
     var child;
     switch(type){
@@ -344,17 +361,39 @@ var addEl = function(x, y, type){
     }
 
     if (type >= ADD_PT && type <= ADD_CNXN){
-	child.setAttribute("id", idCount);
-	child.setAttribute("name", child.getAttribute("customType") + idCount++);
-	
+	child.setAttribute("id", getNewID());
+	child.setAttribute("name", child.getAttribute("customType") + child.getAttribute("id"));	
+	child.setAttribute("settings", "");
+	child.setAttribute("desc", "");
     }
-    getActivePage().appendChild(child);
+
+    //add to js
+    var newEntryDict;
+    
+    if (type != ADD_PATH){	
+	newEntryDict = {
+	    "id" : child.getAttribute("id"),
+	    "status" : "n",
+	    "data" : {
+		"settings" : "",
+		"name" : child.getAttribute("name"),
+		"x" : x,
+		"y" : y,
+		"desc" : ""
+	    }
+	};
+    
+	getActivePage()["nodes"].push(newEntryDict);
+	changePageStatus();
+    }
+    //add to DOM
+    getActivePageDOM().appendChild(child);
     return child;
 }
 
-var updateCanvas = function(e){
+var updateCanvas = function(e){ //for shadow/path
     
-    var page = getActivePage();
+    var page = getActivePageDOM();
     if (page == null){
 	
     }
@@ -365,9 +404,6 @@ var updateCanvas = function(e){
 	    if (child.getAttribute("active") == "true"){
 		switch (mode){
 		case CONF_PATH:
-		    //if (child.getAttribute("x2") != mousex.toString()){
-		    //    console.log("Unfair!");
-		    //}
 		    child.setAttribute("x2", mousex);
 		    child.setAttribute("y2", mousey);
 		    break;
@@ -396,27 +432,85 @@ var updateCanvas = function(e){
     }
 }
 
+// pre : id
+// post: DOM
+var findDOM = function(id){
+    var pageDOM = getActivePageDOM();
+    for (i = 0; i < pageDOM.children.length; i++){
+	if (pageDOM.childNodes[i]["id"] == id) return pageDOM.childNodes[i];
+    }
+    return null;
+}
+
+var findEdgeDOM = function(n1, n2) {
+    var pageDOM = getActivePageDOM();
+    for (i = 0; i < pageDOM.children.length; i++){
+	if (pageDOM.childNodes[i].getAttribute("customType") == "path"){
+	    var curEdge = pageDOM.childNodes[i];
+	    if ((curEdge.getAttribute("x1") == n1["data"]["x"] && curEdge.getAttribute("y1") == n1["data"]["y"]
+		&& curEdge.getAttribute("x2") == n2["data"]["x"] && curEdge.getAttribute("y2") == n2["data"]["y"]) || 
+		(curEdge.getAttribute("x2") == n1["data"]["x"] && curEdge.getAttribute("y2") == n1["data"]["y"]
+		 && curEdge.getAttribute("x1") == n2["data"]["x"] && curEdge.getAttribute("y1") == n2["data"]["y"]))
+		return curEdge;
+	}
+    }
+    return null;
+}
+
+// pre : id
+// post: dict
+var findNode = function(id){
+    var activePage = getActivePage();
+    for (node of activePage["nodes"]){
+	if (node["id"] == id) return node;
+    }
+    return node;
+}
+
+
+var findEdgeFromDOM = function(edgeDOM){
+    var activePage = getActivePage();
+    for (edge of activePage["edges"]){
+	var node1 = findNode(edge["node1ID"]);
+	var node2 = findNode(edge["node2ID"]);
+	if ((node1["data"]["x"] == edgeDOM.getAttribute("x1") && node1["data"]["y"] == edgeDOM.getAttribute("y1")
+	     && node2["data"]["x"] == edgeDOM.getAttribute("x2") && node2["data"]["y"] == edgeDOM.getAttribute("y2")) ||
+	    (node1["data"]["x"] == edgeDOM.getAttribute("x2") && node1["data"]["y"] == edgeDOM.getAttribute("y2")
+	     && node2["data"]["x"] == edgeDOM.getAttribute("x1") && node2["data"]["y"] == edgeDOM.getAttribute("y1")))
+	    return edge;
+    }
+    return null;
+
+}
+
+// pre : coords
+// post: pyth distance
 var distance = function(x1,y1,x2,y2){
     return Math.sqrt( Math.pow((x2-x1), 2) + Math.pow((y2-y1), 2) );
 }
 
-var validPtDistance = function(x, y){
-    var page = getActivePage();
-    for (i = 0; i < page.children.length; i++){
-	var child = page.childNodes[i];
-	var type = child.getAttribute("customType");
-	if (type == "pt" || type == "cnxn" || type == "node"){
-	    childX = child.getAttribute("cx");
-	    childY = child.getAttribute("cy");
-	    if (distance(x,y,childX, childY) < 30)
-		return false;
-	}
-    }
-    
-    return true;
-
+// pre : node ids
+// post: pyth distance
+var nodeDistance = function(n1ID, n2ID){
+    var n1 = findNode(n1ID);
+    var n2 = findNode(n2ID);
+    return distance(n1["data"]["x"], n1["data"]["y"], n2["data"]["x"], n2["data"]["y"]);
 }
 
+// pre : x,y, threshold
+// post: if x,y is far enough from all nodes
+var validPtDistance = function(x, y, threshold){
+    var page = getActivePage();
+    for (i = 0; i < page["nodes"].length; i++){
+	var node = page["nodes"][i];
+	if (distance(x,y, node["data"]["x"], node["data"]["y"]) < threshold)
+	    return false;
+    }
+    return true;
+}
+
+// pre : x, y
+// post: closest node 
 var closestPathDrop = function(x,y){
 
     var ret = null;
@@ -424,16 +518,10 @@ var closestPathDrop = function(x,y){
     const minThresh = 30;
     var page = getActivePage();
     
-    for (i = 0; i < page.children.length; i++){
-	var child = page.childNodes[i];
-	var type = child.getAttribute("customType");
-	if (type == "pt" || type == "cnxn" || type == "node"){
-	    childX = child.getAttribute("cx");
-	    childY = child.getAttribute("cy");
-	    if (distance(x,y,childX, childY) < champDist) {
-		ret = child;
-		champDist = distance(x,y,childX, childY);
-	    }
+    for (node of page["nodes"]){
+	if (distance(x,y,node["data"]["x"], node["data"]["y"]) < champDist) {
+	    ret = node;
+	    champDist = distance(x,y, node["data"]["x"], node["data"]["y"]);
 	}
     }
     
@@ -443,6 +531,7 @@ var closestPathDrop = function(x,y){
 }
 
 var clickedEl = null; //tracking
+var MIN_DIST_THRESHOLD = 30;
 //concerns: runtime
 var canvasClick = function(e){
 
@@ -450,23 +539,23 @@ var canvasClick = function(e){
     case ADD_PT:
     case ADD_NODE:
     case ADD_CNXN:
-	if (validPtDistance(mousex, mousey)){
+	if (validPtDistance(mousex, mousey, MIN_DIST_THRESHOLD)){
 	    addEl(mousex, mousey, mode);
-	    logStatus("something added!");
+	    logStatus("Node added");
 	}
 	else{
-	    logStatus("too close");
+	    logStatus("Too close to neighboring node");
 	}
 	break;	
 
     case ADD_PATH:
 	closest = closestPathDrop(mousex, mousey); 
 	if (closest == null){
-	    logStatus("No anchor node");
+	    logStatus("Can't locate anchor node");
 	}
 	else {
-	    var newPath = addEl(closest.getAttribute("cx"), closest.getAttribute("cy"), ADD_PATH);
-	    newPath.setAttribute("p1", closest.getAttribute("id"));
+	    var newPath = addEl(closest["data"]["x"], closest["data"]["y"], ADD_PATH);
+	    newPath.setAttribute("node1ID", closest["id"]);
 	    mode = CONF_PATH;
 	}
 
@@ -478,84 +567,118 @@ var canvasClick = function(e){
 	if (closest == null){
 	    logStatus("No anchor node");
 	}
-	else {		   
+	else {
+	    var activePageDOM = getActivePageDOM();
+	    var closestDOM = findDOM(closest["id"]);
 	    mode = ADD_PATH;
-	    var line = getActivePage().lastChild;
+	    var line = activePageDOM.lastChild;
+	    var success = true;
 	    line.setAttribute("active", false);
-	    line.setAttribute("x2", closest.getAttribute("cx"));
-	    line.setAttribute("y2", closest.getAttribute("cy"));
-	    if (distance(line.getAttribute("x1"), line.getAttribute("y1"),
-			 line.getAttribute("x2"), line.getAttribute("y2")) < 5){
-		getActivePage().removeChild(line);//prevent self-attachment
+	    line.setAttribute("x2", closestDOM.getAttribute("cx")); //BOOKMARKED
+	    line.setAttribute("y2", closestDOM.getAttribute("cy"));
+	    if (line.getAttribute("node1ID") == closestDOM.getAttribute("id")){
+		activePageDOM.removeChild(line);//prevent self-attachment
 		logStatus("No self-attachment!");
+		success = false;
 	    }
-	    line.setAttribute("p2", closest.getAttribute("id"));
-	    var page = getActivePage();
-	    for (i = 0; i < page.children.length - 1; i++){
-		var child = page.childNodes[i];
-		if (child.getAttribute("customType") == "path"){
-		    if ((child.getAttribute("p1") == line.getAttribute("p1") &&
-			 child.getAttribute("p2") == line.getAttribute("p2")) ||
-			(child.getAttribute("p1") == line.getAttribute("p2") &&
-			 child.getAttribute("p2") == line.getAttribute("p1"))
-		       ){
-			page.removeChild(line);
-			logStatus("The path already exists!");
-			break;
+	    else {
+		line.setAttribute("node2ID", closestDOM.getAttribute("id"));
+		for (i = 0; i < activePageDOM.children.length - 1; i++){
+		    var child = activePageDOM.childNodes[i];
+		    if (child.getAttribute("customType") == "path"){
+			if ((child.getAttribute("node1ID") == line.getAttribute("node1ID") &&
+			     child.getAttribute("node2ID") == line.getAttribute("node2ID")) ||
+			    (child.getAttribute("node1ID") == line.getAttribute("node2ID") &&
+			     child.getAttribute("node2ID") == line.getAttribute("node1ID"))
+			   ){
+			    activePageDOM.removeChild(line);
+			    logStatus("The path already exists!");
+			    success = false;
+			    break;
+			}
 		    }
 		}
 	    }
 	    
-	    //set default distance
-	    var x1 = line.getAttribute("x1");
-	    var y1 = line.getAttribute("y1");
-	    var x2 = line.getAttribute("x2");
-	    var y2 = line.getAttribute("y2");
-	    line.setAttribute("dist", pythDist(x1, y1, x2, y2));
-	    
-	    line.addEventListener("click", elClick);
+	    //success!
+	    if (success){
+		console.log(line);
+		var newEntryDict = {
+		"id" : line.getAttribute("id"),
+		    "status" : "n",
+		    "data" : {
+			"settings" : "",
+			"weight" : parseInt(line.getAttribute("weight"))
+		    },
+		    "node1ID" : parseInt(line.getAttribute("node1ID")),
+		    "node2ID" : parseInt(line.getAttribute("node2ID"))
+		};
+		newEntryDict["data"]["weight"] = nodeDistance(newEntryDict["node1ID"], newEntryDict["node2ID"]);
+		getActivePage()["edges"].push(newEntryDict);    
+		line.setAttribute("weight", newEntryDict["data"]["weight"]);	    
+		line.addEventListener("click", elClick);
+		changePageStatus();
+	    }
 	}
 	break;
     default:
 	logStatus("Non-functional/default");
 	break;
     }
-    console.log("canvas clicked");
     clickedEl = null;
 }
 
 var elClick = function(e){
     if (mode == DEFAULT){
+	logStatus("Monitor");
 	clickedEl = this;
 	event.stopPropagation();
 	refreshMonitor(this);	
-	console.log(this.getAttribute("customType") + " clicked.");
     }
 }
 
 var delEl = function(){
     if (clickedEl != null){
-	//remove associations
+	var clickedDict;
+	
+	if (clickedEl.getAttribute("customType") == "pt")
+	    clickedDict = findNode(clickedEl.getAttribute("id"));
+	else if (clickedEl.getAttribute("customType") == "path")
+	    clickedDict = findEdgeFromDOM(clickedEl); 
+
+	console.log(clickedDict);
 	var page = getActivePage();
-	switch (clickedEl.getAttribute("customType")){
+	var pageDOM = getActivePageDOM();
+	//UPDATE DOM
+	switch (clickedEl.getAttribute("customType")){ //clear edges
 	case "node":
 	case "pt":
 	case "cnxn":
-	    for (i = 0; i < page.children.length; i++){
-		var child = page.childNodes[i];
-		if (child.getAttribute("customType") == "path"){
-		    if (child.getAttribute("p1") == clickedEl.getAttribute("id") ||
-		        child.getAttribute("p2") == clickedEl.getAttribute("id") )
-			page.removeChild(child);
-		}
+	    //UDPATE JS AND DOM
+	    var k;
+	    for (k = 0; k < page["edges"].length; k++){
+		var curEdge = page["edges"][k];
+		if (curEdge["node1ID"] == clickedDict["id"] ||
+		    curEdge["node2ID"] == clickedDict["id"]){
+		    curEdge["status"] = "d";
+		    var dom = findEdgeDOM(findNode(curEdge["node1ID"]), findNode(curEdge["node2ID"]));
+		    
+		    pageDOM.removeChild(findEdgeDOM(findNode(curEdge["node1ID"]), findNode(curEdge["node2ID"])));
+		}		
 	    }
+	    	    
 	    break;
 	}
 
+	clickedDict["status"] = "d";
 	if (clickedEl.getAttribute("customType") == "cnxn")
 	    clrCnxn(clickedEl);
-	clrMonitor();
-	page.removeChild(clickedEl);
+	
+
+	pageDOM.removeChild(clickedEl);
+
+	
+	changePageStatus();
 	clickedEl = null;
 	clrMonitor();
     }
@@ -587,7 +710,7 @@ var setModeFunc = function(newMode){
 	if (newMode == ADD_PT ||
 	    newMode == ADD_CNXN ||
 	    newMode == ADD_NODE){
-	    var page = getActivePage();
+	    var page = getActivePageDOM();
 	    if (page != null || page != undefined)
 		page.appendChild(makeShadow(0, 0, 20, newMode));
 	}
@@ -596,7 +719,7 @@ var setModeFunc = function(newMode){
 }
 
 var clrActive = function(){
-    var page = getActivePage();
+    var page = getActivePageDOM();
     if (page != null){
 	for (i = 0; i < page.children.length; i++){
 	    var child = page.childNodes[i];
@@ -624,7 +747,7 @@ var rClick = function(e){
 
 //Needs to be edited to remove dependencies
 var clrEditor = function(){
-    var page = getActivePage()
+    var page = getActivePageDOM()
     while (page.hasChildNodes()){
 	page.removeChild(page.lastChild);
     }
@@ -636,12 +759,12 @@ var clrMonitor = function(){
 
 var refreshMonitor = function(item){
     clrMonitor();
-    console.log("monitor refreshing");
+
     updateMonitor(item.getAttribute("customType"), item.getAttribute("name"));
     addMonitorField("Name", "name");
     //    addMonitorField("Color", "color");
-    updateMonitor("Id", item.getAttribute("id"));
-
+    updateMonitor("ID", item.getAttribute("id"));
+    
     switch (item.getAttribute("customType")){
     case "path":
 	updateMonitor("Point One", item.getAttribute("p1"));
@@ -806,82 +929,47 @@ var initializeMap = function(){
 var loadMap = function(mapData){
     canvasData["mapID"] = mapID;
     canvasData["mapTitle"] = mapTitle;
-    if (mapData["data"] == null) { //brand new map
+    if (mapData["pages"].length == 0) { //brand new map
 	addPage();
 	setMode(DEFAULT);	
     } 
     else {
-    	var canvasJSON = JSON.parse(mapData["data"]);
-	totalPages = 0;
-	idCount = canvasJSON["idCt"];
-	var pageData;
-	for (i = 0; i < canvasJSON["canvas"].length; i++){
-	    pageData = canvasJSON["canvas"][i];
-	    
-	    
-	    var page = addPage();
-	    page.setAttribute( "name", pageData["name"] );
-	    //page.setAtribute( "num", pageData["num"] ); //not sure we need this
-	    page.setAttribute( "imgUrl", pageData["imgUrl"] );
-	    //set the img in the thing
-	    page.firstChild.setAttribute("xlink:href", pageData["imgUrl"]);
-	    page.setAttribute( "isCurrent", "true" );
-	    page.setAttribute( "id", "viewport" );
-
-	    var item;
-
-	    //console.log("PAGE DATA LENGTH IS " + pageData["data"].length);
-	    
-	    for (j = 0; j < pageData["data"].length; j++){//the first one is itself for some reason
-		item = pageData["data"][j];
-		//console.log(item);
-		//console.log("registering item " + item["type"]);
-		
-		var el;
-		switch (item["type"]){
-		    //name, id
-		case "pt":
-		    el = makePt(item["cx"], item["cy"], item["r"]);
-		    el.addEventListener("click", elClick);
-		    break;
-		case "node":
-		    el = makeNode(item["cx"], item["cy"], item["r"]);
-		    el.addEventListener("click", elClick);
-		    break;
-		case "cnxn":
-		    el = makeCnxn(item["cx"], item["cy"], item["r"]);
-		    el.setAttribute("link", item["link"]);
-		    el.setAttribute("linkDist", item["linkDist"]);
-		    el.addEventListener("click", elClick);
-		    break;
-		case "path":
-		    el = makePath(item["x1"], item["y1"], item["x2"], item["y2"]);
-		    el.setAttribute("p1", item["p1"]);
-		    el.setAttribute("p2", item["p2"]);
-		    el.setAttribute("stroke-width", item["width"]);
-		    el.setAttribute("dist", item["dist"]);
-		    el.setAttribute("active", "false");
-		    el.addEventListener("click", elClick);
-		    //console.log("active set to false");
-		    break;
-		}
-		
-		el.setAttribute("name", item["name"]);
-		el.setAttribute("id", item["id"]);
-		el.setAttribute("visibility", "hidden");
-		page.appendChild(el);
-		//console.log("j is " + j);
-		//console.log(el);
+	console.log("Map loaded.");
+	canvasData = mapData;
+	for (i = 0; i < totalPages(); i++){
+	    var curPage = getPage(i);
+	    curPage["status"] = "r";
+	    var pgDOM = makePageDOM(curPage);
+	    canvasData["activePageCtr"] = i;
+	    //add elements
+	    //NODES
+	    for (j = 0; j < curPage["nodes"].length; j++){		
+		var nodeDict = curPage["nodes"][j];
+		var child = makePt( nodeDict["data"]["x"], nodeDict["data"]["y"], 20 );
+		child.setAttribute("id", nodeDict["id"]);
+		child.setAttribute("name", nodeDict["data"]["name"]);
+		child.setAttribute("settings", nodeDict["data"]["settings"]);
+		child.setAttribute("desc", nodeDict["data"]["desc"]);
+		child.addEventListener("click", elClick);
+		pgDOM.appendChild(child);
+		nodeDict["status"] = "r";
 	    }
-	    
+	    //EDGES
+	    for (j = 0; j < curPage["edges"].length; j++){
+		var edgeDict = curPage["edges"][j];
+		var n1= findNode(edgeDict["node1ID"]);
+		var n2 = findNode(edgeDict["node2ID"]);
+		var child = makePath(n1["data"]["x"], n1["data"]["y"], n2["data"]["x"], n2["data"]["y"]);
+		child.setAttribute("weight", edgeDict["weight"]);
+		child.setAttribute("settings", edgeDict["settings"]);
+		child.setAttribute("active", false);
+		child.addEventListener("click", elClick);
+		pgDOM.appendChild(child);
+		edgeDict["status"] = "r";
+	    }
+	    editorCanvas.appendChild(pgDOM);
 	}
-	
-	totalPages = canvasJSON["pages"];
-
-	if (totalPages != 0){
-	    
-	    setPage(1);
-	}
+	setPage(0);
 
     }
     
@@ -914,77 +1002,14 @@ var saveMap = function(){
 var prepSave = function(){
 
     //not sure if we need pages
-    var newData = {"mapID": mapID, "pages": [] };
-    for (page in canvasData){
-	if (page["status"] != "a"){
-	    curPageRet = {"data" :
-			  {"name": page["name"],
-			   "pageNum": page["pageNum"],
-			   "backgroundImage": page["backgroundImage"]
-			  }
-			 };
-	    //NEW PAGE PACKAGING
-	    if (page["status"] == "u"){
-		curPageRet["id"] = "u" + page["id"];
-		curNodes = [];
-		for (node in page["nodes"]){ //package page's nodes
-		    curNodeEntry = {};
-		    if (node["status"] == "u" || node["status"] == "n"){
-			curNodeEntry["id"] = node["status"] + node["id"];
-			curNodeEntry["data"] = node["data"];
-			curNodes.push(curNodeEntry);
-		    }
-		    else {
-			console.log("node unchanged, pass");
-		    }
-		}
-		curEdges = [];
-		for (edge in page["edges"]){ //package page's edges
-		    curEdgeEntry = {};
-		    if (edge["status"] == "u" || edge["status"] == "n"){
-			curEdgeEntry["id"] = edge["status"] + edge["id"];
-			curEdgeEntry["data"] = edge["data"];
-			if (edge["status"] == "n"){
-			    curEdgeEntry["node1ID"] = edge["node1ID"];
-			    curEdgeEntry["node2ID"] = edge["node2ID"];
-			}
-			curEdges.push(curEdgeEntry);
-		    }
-		    else {
-			console.log("node unchanged, pass");
-		    }
-		}
-
-	    }
-
-	    //NEW PAGE PACKAGING
-	    else if (page["status"] == "n"){
-		curPageRet["id"] = "n" + page["id"];
-		curNodes = [];
-		for (node in page["nodes"]){ //package page's nodes
-		    curNodeEntry = {};
-
-		    curNodeEntry["id"] = node["status"] + node["id"];
-		    curNodeEntry["data"] = node["data"];
-		    curNodes.push(curNodeEntry);
-		    
-		}
-		curEdges = [];
-		for (edge in page["edges"]){ //package page's edges
-		    curEdgeEntry = {};
-		    
-		    curEdgeEntry["id"] = edge["status"] + edge["id"];
-		    curEdgeEntry["data"] = edge["data"];
-		    
-		    curEdgeEntry["node1ID"] = edge["node1ID"];
-		    curEdgeEntry["node2ID"] = edge["node2ID"];
-		    
-		    curEdges.push(curEdgeEntry);
-		}
-	    }
-	    else {
-		console.log("page to json error");
-	    }
+    var newData = {"mapID": canvasData["mapID"], "pages": [] , "guidCtr" : canvasData["guidCtr"]};
+    console.log(canvasData["pages"]);
+    for (i = 0; i < totalPages(); i++){
+	console.log("we trying");
+	page = canvasData["pages"][i];
+	console.log(page);
+	if (page["status"] != "r"){
+	    curPageRet = page;
 	    newData["pages"].push(curPageRet);
 	}
     }

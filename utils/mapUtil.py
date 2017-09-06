@@ -45,9 +45,11 @@ def getMapData(mID):
     curMap = session.query(Map).filter(Map.mapID == mID).one()
     ret = curMap.asPreview()
     ret["pages"] = []
+    ret["guidCtr"] = curMap.guidCtr
     pageList = curMap.pages
     for page in pageList:
-        ret.append(page.asDict())
+        ret["pages"].append(page.asDict())
+        print page.asDict()
     session.close()
     return ret
 
@@ -62,68 +64,108 @@ def store(mapData):
     mID = int(mapData["mapID"])
     curMap = session.query(Map).filter(Map.mapID == mID).one()
     curMap.updateTimestamp()
+    curMap.guidCtr = int(mapData["guidCtr"])
 
     pagesToProcess = mapData["pages"]
     for page in pagesToProcess:
-        if page["id"][0] == "u":
-            pageID = int(page["id"][1:])
+        if page["status"] == "u":
+            pageID = int(page["id"])
             curPage = session.query(Page).filter(Page.pageID == pageID).one()
-            curPage.update(page["data"])
+            curPage.update(page)
             transferDict = {}
             for node in page["nodes"]:
-                if node["id"][0] == "u":
-                    nodeID = int(node["id"][1:])
+                if node["status"] == "u":
+                    nodeID = int(node["id"])
                     curNode = session.query(Node).filter(Node.nodeID == nodeID).one()
                     curNode.update(node["data"])
                     session.add(curNode)
-                elif node["id"][0] == "n":
-                    newNode = Node(node["data"], curPage)
+                elif node["status"] == "n":
+                    newNode = Node(node["data"], pageID, mID)
                     session.add(newNode)
                     session.flush()
-                    transferDict[node["id"]] = newNode.nodeID
+                    transferDict[str(node["id"])] = newNode.nodeID
+                elif node["status"] == "d":
+                    curNode = session.query(Node).filter(Node.nodeID == node["id"]).one()
+                    session.delete(curNode)                    
+                    session.flush()
                 else:
                     print "Store node error"
                 
             for edge in page["edges"]: #need to be able to correctly correspond nodeIDs from client to db
-                if edge["id"][0] == "u":
-                    edgeID = int(edge["id"][1:])
+                if edge["status"] == "u":
+                    edgeID = int(edge["id"])
                     curEdge = session.query(Edge).filter(Edge.edgeID == edgeID).one()
                     curEdge.update(edge["data"])
                     session.add(curEdge)
-                elif edge["id"][0] == "n":
-                    n1ID = transferDict[edge["node1ID"]]
-                    n2ID = transferDict[edge["node2ID"]]
+                elif edge["status"] == "n":
+                    n1ID = 0
+                    n2ID = 0
+                    if str(edge["node1ID"]) in transferDict.keys(): 
+                        n1ID = transferDict[str(edge["node1ID"])]
+                    else:
+                        n1ID = edge["node1ID"]
+                    if str(edge["node2ID"]) in transferDict.keys():
+                        n2ID = transferDict[str(edge["node2ID"])]
+                    else:
+                        n2ID = edge["node2ID"]
                     n1 = session.query(Node).filter(Node.nodeID == n1ID).one()
                     n2 = session.query(Node).filter(Node.nodeID == n2ID).one()
-                    newEdge = Edge(n1, n2, edge["data"], curPage)
+                    newEdge = Edge(n1, n2, edge["data"], pageID, mID)
                     session.add(newEdge)
                     session.flush()
+                elif edge["status"] == "d":
+                    continue
+                    """ 
+                    if (edge["node1ID"] < edge["node2ID"]):
+                        curEdge = session.query(Edge).filter(Edge.lowerID == edge["node1ID"]).filter(Edge.higherID == edge["node2ID"]).one()
+                    else:
+                        curEdge = session.query(Edge).filter(Edge.higherID == edge["node2ID"]).filter(Edge.lowerID == edge["node1ID"]).one()
+
+                    session.delete(curEdge)                    
+                    session.flush()
+                    """
                 else:
                     print "Store edge error"
-                    
-        elif page["id"][0] == "n": #if the page is new, everything inside is new
-            newPage = Page(mID, page["pageNum"])
+            session.add(curPage)
+            session.flush()
+        elif page["status"] == "n": #if the page is new, everything inside is new
+            newPage = Page(mID, page)
             session.add(newPage)
             session.flush()            
             transferDict = {}
             for node in page["nodes"]:
-                newNode = Node(node["data"], newPage)
+                newNode = Node(node["data"], newPage.pageID, mID)
                 session.add(newNode)
                 session.flush()
-                transferDict[node["id"]] = newNode.nodeID
-            for edge in page["edges"]:            
-                n1ID = transferDict[edge["node1ID"]]
-                n2ID = transferDict[edge["node2ID"]]
+                transferDict[str(node["id"])] = newNode.nodeID
+            for edge in page["edges"]:
+                n1ID = 0
+                n2ID = 0
+                if str(edge["node1ID"]) in transferDict.keys(): 
+                    n1ID = transferDict[str(edge["node1ID"])]
+                else:
+                    n1ID = edge["node1ID"]
+                if str(edge["node2ID"]) in transferDict.keys():
+                    n2ID = transferDict[str(edge["node2ID"])]
+                else:
+                    n2ID = edge["node2ID"]
                 n1 = session.query(Node).filter(Node.nodeID == n1ID).one()
                 n2 = session.query(Node).filter(Node.nodeID == n2ID).one()
-                newEdge = Edge(n1, n2, edge["data"], newPage)
+                newEdge = Edge(n1, n2, edge["data"], newPage.pageID, mID)
                 session.add(newEdge)
                 session.flush()
+            session.add(newPage)
+            session.flush()                        
+        elif page["status"] == "d":
+            curPage = session.query(Page).filter(Page.pageID == pageID).one()
+            session.delete(curPage)
+            session.flush()
         else:
             print "Page storing error"
             print page["id"]
             print "end debug"        
-    #End page processing        
+    #End page processing
+    session.add(curMap)
     session.commit()
     session.close()
     return True
