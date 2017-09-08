@@ -28,6 +28,8 @@ var canvasData = {
     "guidCtr" : 0
 }; 
 
+var mapMode;
+
 //FIX MOUSE BUG...
 editorCanvas.addEventListener("mousemove", function(e) {
     mousex = e.offsetX;
@@ -768,65 +770,79 @@ var clrMonitor = function(){
     monitor.innerHTML = "";
 }
 
-var refreshMonitor = function(item){
+var refreshMonitor = function(itemDOM){
     clrMonitor();
-
-    updateMonitor(item.getAttribute("customType"), item.getAttribute("name"));
-    addMonitorField("Name", "name");
-    //    addMonitorField("Color", "color");
-    updateMonitor("ID", item.getAttribute("id"));
+    var item;
+    if (itemDOM.getAttribute("customType") == "pt"){
+	item = findNode(itemDOM.getAttribute("id"));
+	addMonitorEntry("point", item["data"]["name"], false).setAttribute("class", "lead text-primary");
+	addMonitorEntry("ID", item["id"], true);
+    }
+    else {
+	item = findEdgeFromDOM(itemDOM);
+	addMonitorEntry("path", "", true).setAttribute("class", "lead text-primary");
+    }
     
-    switch (item.getAttribute("customType")){
+    
+    switch (itemDOM.getAttribute("customType")){
     case "path":
-	updateMonitor("Point One", item.getAttribute("p1"));
-	updateMonitor("Point Two", item.getAttribute("p2"));
-	addMonitorField("Link Distance", "dist")
+	addMonitorEntry("Point 1", item["node1ID"], true);
+	addMonitorEntry("Point 2", item["node2ID"], true);
+	addMonitorEntry("weight", item["data"]["weight"], false);
 	break;
     case "cnxn":
-	updateMonitor("Link", item.getAttribute("link"));
-	addMonitorField("Link", "link");
-	addMonitorField("Connection Distance", "linkDist")
 	break;
     }
 }
 
-var updateMonitor = function(s1, s2){
-    var s = document.createElement("p");
-    //s.setAttribute("class", djlksjfd);
-    s.innerHTML = s1 + " : " + s2;
+var addMonitorEntry = function(s1, s2, isStatic){
+    var s = document.createElement("h6");
+    var editSpan = document.createElement("span");
+    var headerSpan = document.createElement("span");
+    headerSpan.innerHTML = s1[0].toUpperCase() + s1.slice(1) + " : ";
+    editSpan.innerHTML = s2;
+   
+    s.appendChild(headerSpan);
+    s.appendChild(editSpan);
+    
+    if (!isStatic){
+	editSpan.contentEditable = "true";
+	editSpan.setAttribute("spellcheck", "false");
+	editSpan.setAttribute("attr", s1);
+	editSpan.addEventListener("focus", function(){
+	    var tempClass = editSpan.getAttribute("class");
+	    editSpan.setAttribute("class", tempClass + " text-muted");
+	});
+	editSpan.addEventListener("focusout", function(){
+	    editSpan.setAttribute("class", "");
+	    logChange(this);
+	});
+    }
     monitor.appendChild(s);
+    return s;
 }
 
-var addMonitorField = function(fieldName, attr){//to be changed
-    var d = document.createElement("div");
-    var s = document.createElement("span");
-    s.innerHTML = fieldName + " " + clickedEl.getAttribute(attr);
-    var f = document.createElement("input");
-    f.setAttribute("srcAttr", attr);
-    f.innerHTML = clickedEl.getAttribute(attr);
-    d.appendChild(s);
-    d.appendChild(f);
-    d.addEventListener("change", updateField);
-    monitor.appendChild(d);
+
+
+var logChange = function(el){
+    var item;
+    if (clickedEl.getAttribute("customType") == "pt"){
+	item = findNode(clickedEl.getAttribute("id"));
+    }
+    else {
+	item = findEdgeFromDOM(clickedEl);
+    }
+    if (el.getAttribute("attr") == "point" || el.getAttribute("attr") == "path") {
+	item["data"]["name"] = el.innerHTML;
+    }
+    else {
+	item["data"][el.getAttribute("attr")] = el.innerHTML;
+    }
+    item["status"] = "u";
+    changePageStatus();
+
 }
 
-var updateField = function(){
-    var newData = this.lastChild.value;
-    console.log(this.lastChild.getAttribute("srcAttr") + " has changed to " + newData);
-    clickedEl.setAttribute(this.lastChild.getAttribute("srcAttr"), newData);
-    //get that first part:
-    var res =  this.firstChild.innerHTML.split(" ")[0];
-    this.firstChild.innerHTML = res + " " + newData;
-    refreshMonitor(clickedEl);
-}
-
-var pythDist = function(x1, y1, x2, y2){
-    
-    var dx = x2 - x1;
-    var dy = y2 - y1;
-    return Math.round( Math.sqrt(dy * dy + dx * dx) );
-    
-}
 
 var delMap = function(){
     
@@ -922,6 +938,7 @@ var uploadImg = function(event){
 }
 
 
+
 var initializeMap = function(){
     $.ajax({	   
 	url: "/loadData/",
@@ -938,6 +955,7 @@ var initializeMap = function(){
 }
 
 var loadMap = function(mapData){
+    mapMode = document.getElementById("mapMode").innerHTML;
     canvasData["mapID"] = mapID;
     canvasData["mapTitle"] = mapTitle;
     canvasData["deletePages"] = [];
@@ -949,7 +967,10 @@ var loadMap = function(mapData){
 	console.log("Map loaded.");
 	canvasData = mapData;
 	canvasData["deletePages"] = [];
-	
+	if (mapMode == "Editor"){
+	    setEditables("mapTitle");
+	    setEditables("pgTitle");
+	}	
 	for (i = 0; i < totalPages(); i++){
 	    var curPage = getPage(i);
 	    curPage["status"] = "r";
@@ -982,6 +1003,10 @@ var loadMap = function(mapData){
 		edgeDict["status"] = "r";
 	    }
 	    editorCanvas.appendChild(pgDOM);
+	}
+	
+	for (i = 0; i < totalPages(); i++){
+	    hidePage(i);
 	}
 	setPage(0);
 
@@ -1017,6 +1042,7 @@ var prepSave = function(){
 
     //not sure if we need pages
     var newData = {"mapID": canvasData["mapID"],
+		   "title": canvasData["title"],
 		   "deletePages" : canvasData["deletePages"],
 		   "pages": [] , "guidCtr" : canvasData["guidCtr"]};
     console.log(canvasData["pages"]);
@@ -1032,9 +1058,36 @@ var prepSave = function(){
     return newData;
 }
 
+var setEditables = function(domID){
+    var el = document.getElementById(domID);
+    el.contentEditable = "true";
+    el.setAttribute("spellcheck", "false");
+    el.addEventListener("focus", function(){
+	var tempClass = el.getAttribute("class"); //token efforts
+	el.setAttribute("class", tempClass + " text-muted");
+    });
+    el.addEventListener("focusout", function(){
+	el.setAttribute("class", "");
+	logChangeSpecial(this, domID);
+    });
+
+}
+
+var logChangeSpecial = function(el, domID){
+    if (domID == "mapTitle"){
+	canvasData["title"] = el.innerHTML;
+    }
+    else if (domID == "pgTitle"){
+	getActivePage()["pageName"] = el.innerHTML;
+	changePageStatus();
+    }
+    
+}
 
 $(document).ready(
-    initializeMap
+    function(){
+	initializeMap();	
+    }
 );
 
 //TODO: set all statuses to "a" at beginning

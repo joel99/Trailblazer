@@ -4,10 +4,11 @@
 {% block content %}
 
 <div class="row page-header">
-  <h2 class="col-md-6">Map Editor :
+  <h2 class="col-md-7">Map
+    <span id="mapMode">Editor</span> :
     <span id="mapTitle">{{mapData["title"]}}</span>
   </h2>
-  <h2 class="col-md-3">
+  <h2 class="col-md-2">
     ID : <span id="mapID">{{mapData["mapID"]}}</span>
   </h2>
   <h2 class="col-md-3 text-right">
@@ -50,9 +51,8 @@
   </div>
 </div>
 <div class="row">
-  <div class="col-md-2"></div>
 
-  <div class="col-md-6">
+  <div class="col-md-8">
     <h2>
       Page <span id="pgNum"></span>:  <span id="pgTitle"></span>
 
@@ -61,11 +61,11 @@
     <p>Status: <span id="status"></span></p>
     <br>
   </div>
-  <div class="col-md-2">
+  <div class="col-md-4">
     <br>
-    <div id="monitor"></div>
-  </div>
-  <div class="col-md-2">
+    <div id="monitor" class="container form-control">
+      
+    </div>
   </div>
 </div>
 
@@ -78,6 +78,7 @@
 
 <script src="/static/js/editor.js"></script>
 <script src="/static/js/editorBtns.js"></script>
+<script src="/static/js/editFields.js"></script>
 <!--<script src="/static/require.js"></script>-->
 <!--<script src="/static/svg-pan-zoom.js"></script>-->
 {% endblock %}

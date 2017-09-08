@@ -10,7 +10,7 @@
 :focus {
     outline: 0;
     border:none;
-    color: rgba(0, 0, 0, 0);
+    /*color: rgba(0, 0, 0, 0);*/
 }
     
 
@@ -29,4 +29,12 @@ input{
 #editorCanvas{
     width: 100%;
     height:35em;
+}
+
+#monitor{
+    color:black;
+}
+
+p:focus{ 
+    color:black;
 }

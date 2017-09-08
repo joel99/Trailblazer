@@ -65,7 +65,7 @@ def store(mapData):
     curMap = session.query(Map).filter(Map.mapID == mID).one()
     curMap.updateTimestamp()
     curMap.guidCtr = int(mapData["guidCtr"])
-
+    curMap.title = mapData["title"]
     pagesToProcess = mapData["pages"]
     pagesToDelete = mapData["deletePages"]
     for pageID in pagesToDelete:
