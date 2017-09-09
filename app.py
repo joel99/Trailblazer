@@ -114,7 +114,7 @@ def login():
     d = request.form
 
     uN = d["username"]
-    pwd = d["loginPass"]
+    pwd = d["password"]
     #auth
     msg = ""
     if bcrypt.check_password_hash(users.getHashed(uN), pwd) :

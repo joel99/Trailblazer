@@ -19,6 +19,7 @@ var pgNum = document.getElementById("pgNum");
 var pgTitle = document.getElementById("pgTitle");
 var mapID = document.getElementById("mapID").innerHTML;
 var mousex, mousey;
+var modeDisplay = document.getElementById("modeDisplay");
 var canvasData = {
     "mapID": mapID,
     "title": pgTitle.innerHTML,
@@ -224,10 +225,8 @@ var delPage = function(){ //not done...
 //EDITOR UI
 const DEFAULT = 1;
 const ADD_PT = 2;
-const ADD_NODE = 3;
 const ADD_PATH = 4;
 const ADD_CNXN = 5;
-const EDIT = 6;
 const CONF_PATH = 7;
 
 var mode = DEFAULT; //edited with other buttons on editor page
@@ -236,6 +235,33 @@ var mode = DEFAULT; //edited with other buttons on editor page
 
 var setMode = function(m){
     mode = m;
+    switch (mode){
+    case DEFAULT:
+	setModeDisplay("Default");
+	break;
+    case ADD_PT:
+	setModeDisplay("Add point");
+	break;	
+    case ADD_CNXN:
+	setModeDisplay("Add connection");
+	break;
+    case ADD_PATH:
+	setModeDisplay("Add path");
+	break;
+    case CONF_PATH:
+	setModeDisplay("Confirm path");
+	break;
+    case DEF_SRC:
+	setModeDisplay("Pick source");
+	break;
+    case DEF_DEST:
+	setModeDisplay("Pick destination");
+	break;
+    }
+}
+
+var setModeDisplay = function(s){
+    modeDisplay.innerHTML = s;
 }
 
 //PLEASE NOTE: for proximity concerns, each shape that requires space needs "cx", "cy" attributes
@@ -330,9 +356,6 @@ var makeShadow = function(x, y, r, mode){
     case ADD_PT:
 	s = makePt(x, y, r);
 	break;
-    case ADD_NODE:
-	s = makeNode(x, y, r);
-	break;
     case ADD_CNXN:
 	s = makeCnxn(x, y, r);
 	break;
@@ -362,10 +385,6 @@ var addEl = function(x, y, type){
 	break;
     case ADD_PATH:
 	child = makePath( x, y, mousex, mousey );
-	break;
-    case ADD_NODE:
-	child = makeNode( x, y, 20 );
-	child.addEventListener("click", elClick);
 	break;
     case ADD_CNXN:
 	child = makeCnxn( x, y, 20 );
@@ -430,12 +449,6 @@ var updateCanvas = function(e){ //for shadow/path
 		    child.setAttribute("cx", mousex);
 		    child.setAttribute("cy", mousey);
 		    child.setAttribute("points", cnxnPts(mousex, mousey, child.getAttribute("r")));	
-		    break;
-		case ADD_NODE:		
-		    child.setAttribute("visibility", "visible");
-		    child.setAttribute("cx", mousex);
-		    child.setAttribute("cy", mousey);
-		    child.setAttribute("points", nodePts(mousex, mousey, child.getAttribute("r")));
 		    break;
 		}	    
 
@@ -550,7 +563,6 @@ var canvasClick = function(e){
 
     switch (mode){
     case ADD_PT:
-    case ADD_NODE:
     case ADD_CNXN:
 	if (validPtDistance(mousex, mousey, MIN_DIST_THRESHOLD)){
 	    addEl(mousex, mousey, mode);
@@ -642,7 +654,7 @@ var canvasClick = function(e){
 }
 
 var elClick = function(e){
-    if (mode == DEFAULT){
+    if (mode == DEFAULT || mode == DEF_SRC || mode == DEF_DEST){ //short-circuiting is great
 	logStatus("Monitor");
 	clickedEl = this;
 	event.stopPropagation();
@@ -653,13 +665,12 @@ var elClick = function(e){
 var delEl = function(){
     if (clickedEl != null){
 	var clickedDict;
-	
+
 	if (clickedEl.getAttribute("customType") == "pt")
 	    clickedDict = findNode(clickedEl.getAttribute("id"));
 	else if (clickedEl.getAttribute("customType") == "path")
 	    clickedDict = findEdgeFromDOM(clickedEl); 
 
-	console.log(clickedDict);
 	var page = getActivePage();
 	var pageDOM = getActivePageDOM();
 	//UPDATE DOM
@@ -721,8 +732,7 @@ var setModeFunc = function(newMode){
 	clrActive();
 	clrMonitor();
 	if (newMode == ADD_PT ||
-	    newMode == ADD_CNXN ||
-	    newMode == ADD_NODE){
+	    newMode == ADD_CNXN){
 	    var page = getActivePageDOM();
 	    if (page != null || page != undefined)
 		page.appendChild(makeShadow(0, 0, 20, newMode));
@@ -947,6 +957,7 @@ var initializeMap = function(){
 	dataType: "json",
 	success: function(data) {
 	    loadMap(data);
+	    $(document).trigger("loadView");
 	},
 	error: function() {
 	    console.log("unable to pull Data");
@@ -1086,8 +1097,9 @@ var logChangeSpecial = function(el, domID){
 
 $(document).ready(
     function(){
-	initializeMap();	
+	initializeMap();
     }
 );
 
 //TODO: set all statuses to "a" at beginning
+

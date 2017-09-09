@@ -23,3 +23,10 @@ def addUser( uN, pwd ):
     session.commit()
     session.close()
     return uID
+
+def getHashed(uN):
+    session = Session()
+    curUser = session.query(User).filter(User.username == uN).one()
+    ret = curUser.passData
+    session.close()
+    return ret

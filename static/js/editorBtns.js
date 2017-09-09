@@ -1,7 +1,6 @@
 //Buttons/Event Listeners
 
 var ptBtn = document.getElementById("ptBtn");
-var nodeBtn = document.getElementById("nodeBtn");
 var pathBtn = document.getElementById("pathBtn");
 var cnxnBtn = document.getElementById("cnxnBtn");
 var delElBtn = document.getElementById("delElBtn");
@@ -27,7 +26,6 @@ editorCanvas.addEventListener('contextmenu', rClick, false);
 
 ptBtn.addEventListener("click", setModeFunc(ADD_PT));
 pathBtn.addEventListener("click", setModeFunc(ADD_PATH));
-nodeBtn.addEventListener("click", setModeFunc(ADD_NODE));
 cnxnBtn.addEventListener("click", setModeFunc(ADD_CNXN));
 
 clrBtn.addEventListener("click", clrEditor);

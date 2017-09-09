@@ -14,11 +14,16 @@
 </div>
 <div class="row">
   <div class="col-md-2">
-    <p>MODE: </p>
+    <p>MODE: <span id="modeDisplay"></span></p>
     <button id="clrBtn" class="btn btn-default edit btn-block">Clear Query</button>
     <button id="srcNodeBtn" class="btn btn-default edit btn-block">Source Node</button>
     <button id="destNodeBtn" class="btn btn-default edit btn-block">Destination Node</button>
     <button id="calcBtn" class="btn btn-default edit btn-block">Calculate Path!</button>
+    <h6>Source ID: <span id="srcID"></span></h6>
+    <h5>Source Name: <span id="srcName"></span></h5>
+    <h6>Dest ID: <span id="destID"></span></h6>
+    <h5>Dest Name: <span id="destName"></span></h5>
+    
   </div>
   
 
@@ -34,22 +39,24 @@
 </div>
 <div class="row">
   
-  <div class="col-md-8">
+  <div class="col-md-4">
     <h2>
       Page <span id="pgNum"></span>:  <span id="pgTitle"></span>
 
     </h2>
     <br>
     <p>Status: <span id="status"></span></p>
-    <br>
   </div>
   <div class="col-md-4">
-    <br>
-    <div id="monitor" class="container form-control">
+    <div id="monitor" class="container">
       
     </div>
-    <div id="directions">
-  
+  </div>
+  <div class="col-md-4">
+    <div id="directions" class="container">
+      <h4 id="dirHeader">Directions</h4>
+      <div id="dirMonitor">
+      </div>
     </div>
     
   </div>
