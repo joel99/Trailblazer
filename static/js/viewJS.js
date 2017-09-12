@@ -1,6 +1,3 @@
-const DEF_SRC = 10;
-const DEF_DEST = 11;
-
 var algoNode1ID;
 var algoNode2ID;
 
@@ -108,6 +105,7 @@ var calcPath = function(){
 		unvisitedIDs.push(curNodeArr[l]["id"]);
 	    }
 	}
+
 	verts[algoNode1ID]["dist"] = 0;
 	//var indexOfInit = unvisitedIDs.indexOf(algoNode1ID);
 	//unvisitedIDs.splice(indexOfInit, 1);
@@ -117,7 +115,7 @@ var calcPath = function(){
 	    for (var curNeighborID in curNeighbors){
 		var tentDist = verts[curNodeID]["dist"] + curNeighbors[curNeighborID];
 		if (tentDist < verts[curNeighborID]["dist"]){
-		    console.log(verts[curNeighborID]["dist"] + " trumped for " + curNeighborID);
+		    console.log(verts[curNeighborID]["dist"] + " trumped for " + curNeighborID + " by " + tentDist);
 		    verts[curNeighborID]["dist"] = tentDist;
 		    verts[curNeighborID]["prevID"] = curNodeID;
 		}
@@ -126,32 +124,33 @@ var calcPath = function(){
 	    visitedIDs.push(curNodeID);
 	    unvisitedIDs.splice(unvisitedIDs.indexOf(curNodeID), 1);
 	    //find least path
+	    console.log("remaining " + unvisitedIDs);
 	    curNodeID = getLeastDistID(unvisitedIDs, verts);
-	    
+	    console.log(curNodeID);
 	    if (curNodeID == -1) {
 		break;
 	    }
 	}
 	//found it
 	//print diag
+	clearDir();
 	console.log(verts[algoNode2ID]["dist"]);
 	if (curNodeID == -1){
-	    clearDir();
 	    updateDir("Impossible to reach");
 	}
-
-	var traverseBackID = algoNode2ID;
-	clearDir();
-	logStatus("Total distance : " + verts[algoNode2ID]["dist"]);
-	var endNode = findNode(algoNode2ID);
-	updateDir("Arrive at " + endNode["data"]["name"]);
-	while (traverseBackID != algoNode1ID){
+	else {
+	    var traverseBackID = algoNode2ID.toString();
+	    logStatus("Total distance : " + verts[algoNode2ID]["dist"]);
+	    var endNode = findNode(algoNode2ID);
+	    updateDir("Arrive at " + endNode["data"]["name"]);
+	    while (traverseBackID != algoNode1ID.toString()){
 	    var prevNodeID = verts[traverseBackID]["prevID"];
-	    updateDir("Travel " + (verts[traverseBackID]["dist"] - verts[prevNodeID]["dist"])
-		      + " units to " + findNode(parseInt(traverseBackID))["data"]["name"]);
-	    traverseBackID = prevNodeID;
+		updateDir("Travel " + (verts[traverseBackID.toString()]["dist"] - verts[prevNodeID]["dist"])
+			  + " units to " + findNode(parseInt(traverseBackID))["data"]["name"]);
+		traverseBackID = prevNodeID;
+	    }
+	    updateDir("Depart from " + findNode(algoNode1ID)["data"]["name"]);
 	}
-	updateDir("Depart from " + findNode(algoNode1ID)["data"]["name"]);
     }
 }
 
@@ -162,7 +161,7 @@ var getLeastDistID = function(idArr, d){
     var champIDIndex = 0;
     for (m = 1; m < idArr.length; m++){
 	if (d[idArr[m]]["dist"] < d[idArr[champIDIndex]]["dist"])
-	    champID = m;
+	    champIDIndex = m;
     }
     if (d[idArr[champIDIndex]]["dist"] == MAX_DIST){
 	return -1;

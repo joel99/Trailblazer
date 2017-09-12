@@ -228,6 +228,11 @@ const ADD_PT = 2;
 const ADD_PATH = 4;
 const ADD_CNXN = 5;
 const CONF_PATH = 7;
+const LINK_CNXN = 8;
+const CONF_CNXN = 9;
+const DEF_SRC = 10;
+const DEF_DEST = 11;
+
 
 var mode = DEFAULT; //edited with other buttons on editor page
 
@@ -343,7 +348,6 @@ var makeCnxn = function(x, y, r){//forbid "unlinked" name
     s.setAttribute("customType", "cnxn");
     s.setAttribute("link", "unlinked");
     s.setAttribute("linkDist", 0);
-    
     return s;
 
 }
@@ -373,6 +377,12 @@ var makeShadow = function(x, y, r, mode){
 var changePageStatus = function(){
     if (getActivePage()["status"] != "n") {
 	getActivePage()["status"] = "u";
+    }
+}
+
+var changePageStatusByNum = function(num){
+    if (getPage(num)["status"] != "n"){
+	getPage(num)["status"] = "u";
     }
 }
 
@@ -414,7 +424,14 @@ var addEl = function(x, y, type){
 		"desc" : ""
 	    }
 	};
-    
+	if (type == ADD_PT){
+	    newEntryDict["nodeType"] = 0;
+	}
+	else if (type == ADD_CNXN){
+	    newEntryDict["nodeType"] = 1;
+	    newEntryDict["link"] = null;
+	    newEntryDict["linkDist"] = 0;
+	}
 	getActivePage()["nodes"].push(newEntryDict);
 	changePageStatus();
     }
@@ -493,6 +510,21 @@ var findNode = function(id){
     return node;
 }
 
+var findByID = function(id){
+    console.log("searching for " + id);
+    for (var k = 0; k < totalPages(); k++){
+	for (node of getPage(k)["nodes"]){
+	    if (node["id"] == id) {
+		changePageStatus(); //nice...
+		console.log("I found it!");
+		console.log(node);
+		return {"node": node,
+			"pageNum": k
+		       };
+	    }
+	}
+    }
+}
 
 var findEdgeFromDOM = function(edgeDOM){
     var activePage = getActivePage();
@@ -507,6 +539,21 @@ var findEdgeFromDOM = function(edgeDOM){
     }
     return null;
 
+}
+
+
+var updateDOM = function(nodeDict){
+    var pageDOM = getPageDOM(nodeDict["pageNum"]);
+    for (i = 0; i < pageDOM.children.length; i++){
+	if (pageDOM.childNodes[i].getAttribute("customType") == "pt" || pageDOM.childNodes[i].getAttribute("customType") == "cnxn"){
+	    var curNode = pageDOM.childNodes[i];
+	    if (curNode.getAttribute("customType") == "cnxn"){
+		curNode.setAttribute("link", nodeDict["node"]["link"]);
+		curNode.setAttribute("linkDist", nodeDict["node"]["linkDist"]);
+	    }
+	}
+    }
+    changePageStatusByNum(nodeDict["pageNum"]);
 }
 
 // pre : coords
@@ -628,6 +675,16 @@ var canvasClick = function(e){
 	    //success!
 	    if (success){
 		console.log(line);
+		var node1ID = 0;
+		var node2ID = 0;
+		if (parseInt(line.getAttribute("node1ID")) < parseInt(line.getAttribute("node2ID"))){
+		    node1ID = parseInt(line.getAttribute("node1ID"));
+		    node2ID = parseInt(line.getAttribute("node2ID"));
+		}
+		else {
+		    node2ID = parseInt(line.getAttribute("node1ID"));
+		    node1ID = parseInt(line.getAttribute("node2ID"));
+		}
 		var newEntryDict = {
 		"id" : line.getAttribute("id"),
 		    "status" : "n",
@@ -635,8 +692,8 @@ var canvasClick = function(e){
 			"settings" : "",
 			"weight" : parseInt(line.getAttribute("weight"))
 		    },
-		    "node1ID" : parseInt(line.getAttribute("node1ID")),
-		    "node2ID" : parseInt(line.getAttribute("node2ID"))
+		    "node1ID" : node1ID,
+		    "node2ID" : node2ID
 		};
 		newEntryDict["data"]["weight"] = nodeDistance(newEntryDict["node1ID"], newEntryDict["node2ID"]);
 		getActivePage()["edges"].push(newEntryDict);    
@@ -654,19 +711,46 @@ var canvasClick = function(e){
 }
 
 var elClick = function(e){
-    if (mode == DEFAULT || mode == DEF_SRC || mode == DEF_DEST){ //short-circuiting is great
+    switch (mode){
+    case DEFAULT:
+    case DEF_SRC:
+    case DEF_DEST:
 	logStatus("Monitor");
 	clickedEl = this;
 	event.stopPropagation();
 	refreshMonitor(this);	
+	break;
+    case LINK_CNXN:
+	clickedEl = this;
+	if (clickedEl.getAttribute("customType") == "cnxn") {
+	    logStatus("Connection initiated");
+	    setMode(CONF_CNXN);
+	}
+	else {
+	    logStatus("Not a connection node!");
+	}
+	event.stopPropagation();
+	break;
+    case CONF_CNXN:
+	if (clickedEl.getAttribute("customType") == "cnxn") {
+	    logStatus("Connection end confirmed");
+	    confirmCnxnEnd(this); //clickedEl still logged
+	    mode = LINK_CNXN;
+	}
+	else {
+	    logStatus("Not a connection node!");
+	}
+	event.stopPropagation();
+	break;
     }
 }
+
 
 var delEl = function(){
     if (clickedEl != null){
 	var clickedDict;
 
-	if (clickedEl.getAttribute("customType") == "pt")
+	if (clickedEl.getAttribute("customType") == "pt" || clickedEl.getAttribute("customType") == "cnxn")
 	    clickedDict = findNode(clickedEl.getAttribute("id"));
 	else if (clickedEl.getAttribute("customType") == "path")
 	    clickedDict = findEdgeFromDOM(clickedEl); 
@@ -674,7 +758,7 @@ var delEl = function(){
 	var page = getActivePage();
 	var pageDOM = getActivePageDOM();
 	//UPDATE DOM
-	switch (clickedEl.getAttribute("customType")){ //clear edges
+	switch (clickedEl.getAttribute("customType")) { //clear edges
 	case "node":
 	case "pt":
 	case "cnxn":
@@ -696,7 +780,7 @@ var delEl = function(){
 
 	clickedDict["status"] = "d";
 	if (clickedEl.getAttribute("customType") == "cnxn")
-	    clrCnxn(clickedEl);
+	    clrCnxnFromNode(clickedDict["id"]);
 	
 
 	pageDOM.removeChild(clickedEl);
@@ -708,18 +792,70 @@ var delEl = function(){
     }
 }
 
-var clrCnxn = function(cnxn){
-    var tarID = cnxn.getAttribute("link");
-    var i,j;
-    for (i = 0; i < editorCanvas.children.length; i++){
-	var page = editorCanvas.childNodes[i];
-	for (j = 0; j < page.children.length; j++){
-	    var child = page.childNodes[j];
-	    if (child.getAttribute("id") == tarID){
-		child.setAttribute("link", "unlinked");
-	    }
+var clrCnxnEdge = function(id1, id2){
+    id1 = parseInt(id1);
+    id2 = parseInt(id2);
+    console.log("clearing edge dict of " + id1 + "  " + id2);
+    for (edge of canvasData["cnxnEdges"]){
+	console.log("cur edge");
+	console.log(edge["node1ID"] + " " + edge["node2ID"]);
+	if ((id1 == edge["node1ID"] && id2 == edge["node2ID"]) ||
+	    (id2 == edge["node1ID"] && id1 == edge["node2ID"])) {
+	    if (edge["status"] != "n")
+		edge["status"] = "d";
+	    else
+		canvasData["cnxnEdges"].splice(canvasData["cnxnEdges"].indexOf(edge), 1);
+	    //var cnxn1Dict = findByID(edge["node1ID"]);
+	    //var cnxn2Dict = findByID(edge["node2ID"]);
+	    //cnxn1Dict["node"]["link"] = "unlinked";
+	    //cnxn1Dict["node"]["linkDist"] = 0;
+	    //cnxn2Dict["node"]["link"] = "unlinked";
+	    //cnxn2Dict["node"]["linkDist"] = 0;
+	    //updateDOM(cnxn1Dict);
+	    //updateDOM(cnxn2Dict);
 	}
     }
+}
+
+var clrCnxnFromNode = function(id){
+    id = parseInt(id);
+    console.log("clearing " + id);
+    for (edge of canvasData["cnxnEdges"]){
+	if (id == edge["node1ID"] || id == edge["node2ID"]){
+	    var otherNode;
+	    if (id == edge["node1ID"]){
+		edge["status"] == "d";
+		console.log("associate is " + edge["node2ID"]);
+		otherNode = findByID(edge["node2ID"]);
+	    }
+	    else if (id == edge["node2ID"]){
+		edge["status"] == "d";
+		console.log("associate is " + edge["node1ID"]);
+		otherNode = findByID(edge["node1ID"]);
+	    }
+	    otherNode["node"]["link"] = "unlinked";
+	    otherNode["node"]["linkDist"] = 0;
+	    if (otherNode["node"]["status"] != "n"){
+		otherNode["node"]["status"] = "u";
+	    }
+	    changePageStatusByNum(otherNode["pageNum"]);
+	    clrCnxnEdge(id, otherNode["node"]["id"]);
+	    clrCnxnNodeDOM(otherNode);	    
+	}
+    }
+}
+
+var clrCnxnNodeDOM = function(nodeDict){
+    var pageDOM = getPageDOM(nodeDict["pageNum"]);
+    for (i = 0; i < pageDOM.children.length; i++){
+	if (pageDOM.childNodes[i].getAttribute("customType") == "cnxn"){
+	    var curNode = pageDOM.childNodes[i];
+	    if (curNode.getAttribute("customType") == "cnxn"){
+		curNode.setAttribute("link", "unlinked");
+		curNode.setAttribute("linkDist", 0);
+	    }
+	}
+    } 
 }
 
 //To do - add restrictions on clicking, status bar (error log)
@@ -764,6 +900,54 @@ var rClick = function(e){
     clrActive();
 }
 
+var confirmCnxnEnd = function(e){
+    var cnxn1 = clickedEl;
+    var cnxn2 = e;
+    clrCnxnFromNode(cnxn1.getAttribute("id"));
+    clrCnxnFromNode(cnxn2.getAttribute("id"));
+    var cnxn1data = findByID(cnxn1.getAttribute("id")); 
+    var cnxn1Src = cnxn1data["node"];
+    var cnxn2data = findByID(cnxn2.getAttribute("id"));
+    var cnxn2Src = cnxn2data["node"];
+    //var cnxn2Src = findNode(cnxn2.getAttribute("id"));
+    if (cnxn1data["pageNum"] == canvasData["activePageCtr"]) {
+	logStatus("Cnxn's cannot be on same page");
+    }
+    else {
+	cnxn1Src["link"] = cnxn2Src["id"];
+	cnxn1Src["linkDist"] = 0;
+	cnxn2Src["link"] = cnxn1Src["id"];
+	cnxn2Src["linkDist"] = 0;
+	var dictN1ID = 0;
+	var dictN2ID = 0;
+	if (cnxn1Src["id"] < cnxn2Src["id"]){
+	    dictN1ID = cnxn1Src["id"];
+	    dictN2ID = cnxn2Src["id"];
+	}
+	else {
+	    dictN2ID = cnxn1Src["id"];
+	    dictN1ID = cnxn2Src["id"];
+	}
+	updateDOM(cnxn1data);
+	updateDOM(cnxn2data);
+	//register edge from end point for convenience, just don't add it
+	var newEdgeDict = {
+	    "id" : getNewID(),
+	    "status" : "n",
+	    "data" : {
+		"settings" : "",
+		"weight" : 0
+	    },
+	    "node1ID" : dictN1ID,
+	    "node2ID" : dictN2ID
+	};
+	
+	canvasData["cnxnEdges"].push(newEdgeDict);
+	
+    }
+}
+
+
 //Monitors
 //==================================================================
 
@@ -787,6 +971,17 @@ var refreshMonitor = function(itemDOM){
 	item = findNode(itemDOM.getAttribute("id"));
 	addMonitorEntry("point", item["data"]["name"], false).setAttribute("class", "lead text-primary");
 	addMonitorEntry("ID", item["id"], true);
+	addMonitorEntry("desc", item["data"]["desc"], false);
+    }
+    else if (itemDOM.getAttribute("customType") == "cnxn"){
+	item = findNode(itemDOM.getAttribute("id"));
+	console.log("getting monitor data");
+	console.log(item);
+	addMonitorEntry("connection", item["data"]["name"], false).setAttribute("class", "lead text-primary");
+	addMonitorEntry("ID", item["id"], true);
+	addMonitorEntry("desc", item["data"]["desc"], false);
+	addMonitorEntry("link ID", item["link"], true);
+	addMonitorEntry("link distance", item["linkDist"], false);
     }
     else {
 	item = findEdgeFromDOM(itemDOM);
@@ -803,6 +998,7 @@ var refreshMonitor = function(itemDOM){
     case "cnxn":
 	break;
     }
+
 }
 
 var addMonitorEntry = function(s1, s2, isStatic){
@@ -836,17 +1032,27 @@ var addMonitorEntry = function(s1, s2, isStatic){
 
 var logChange = function(el){
     var item;
-    if (clickedEl.getAttribute("customType") == "pt"){
+    if (clickedEl.getAttribute("customType") == "pt" || clickedEl.getAttribute("customType") == "cnxn"){
 	item = findNode(clickedEl.getAttribute("id"));
     }
     else {
 	item = findEdgeFromDOM(clickedEl);
     }
-    if (el.getAttribute("attr") == "point" || el.getAttribute("attr") == "path") {
+    switch (el.getAttribute("attr")){
+    case "point":
+    case "path":
+    case "connection":
 	item["data"]["name"] = el.innerHTML;
-    }
-    else {
+	break;
+    case "link":
+	changeLinkedPageStatus();
+	break;
+    case "linkDist":
+	changeLinkedPageStatus();
+	break;
+    default:
 	item["data"][el.getAttribute("attr")] = el.innerHTML;
+	break;
     }
     item["status"] = "u";
     changePageStatus();
@@ -970,6 +1176,7 @@ var loadMap = function(mapData){
     canvasData["mapID"] = mapID;
     canvasData["mapTitle"] = mapTitle;
     canvasData["deletePages"] = [];
+    canvasData["cnxnEdges"] = [];
     if (mapData["pages"].length == 0) { //brand new map
 	addPage();
 	setMode(DEFAULT);	
@@ -989,13 +1196,20 @@ var loadMap = function(mapData){
 	    canvasData["activePageCtr"] = i;
 	    //add elements
 	    //NODES
-	    for (j = 0; j < curPage["nodes"].length; j++){		
+	    for (j = 0; j < curPage["nodes"].length; j++){
 		var nodeDict = curPage["nodes"][j];
-		var child = makePt( nodeDict["data"]["x"], nodeDict["data"]["y"], 20 );
+		var child;
+		if (nodeDict["nodeType"] == 0){
+		    child = makePt( nodeDict["data"]["x"], nodeDict["data"]["y"], 20 );
+		}
+		else if (nodeDict["nodeType"] == 1){
+		    child = makeCnxn( nodeDict["data"]["x"], nodeDict["data"]["y"], 20 );
+		}
 		child.setAttribute("id", nodeDict["id"]);
 		child.setAttribute("name", nodeDict["data"]["name"]);
 		child.setAttribute("settings", nodeDict["data"]["settings"]);
 		child.setAttribute("desc", nodeDict["data"]["desc"]);
+		child.setAttribute("nodeType", nodeDict["nodeType"]);
 		child.addEventListener("click", elClick);
 		pgDOM.appendChild(child);
 		nodeDict["status"] = "r";
@@ -1003,6 +1217,7 @@ var loadMap = function(mapData){
 	    //EDGES
 	    for (j = 0; j < curPage["edges"].length; j++){
 		var edgeDict = curPage["edges"][j];
+		console.log(edgeDict);
 		var n1= findNode(edgeDict["node1ID"]);
 		var n2 = findNode(edgeDict["node2ID"]);
 		var child = makePath(n1["data"]["x"], n1["data"]["y"], n2["data"]["x"], n2["data"]["y"]);
@@ -1015,6 +1230,23 @@ var loadMap = function(mapData){
 	    }
 	    editorCanvas.appendChild(pgDOM);
 	}
+
+	for (j =0; j < canvasData["cnxnEdges"].length; j++){
+	    var edgeDict = canvasData["cnxnEdges"][j];
+	    edgeDict["status"] = "r";
+	    var firstCnxnDict = findByID(edgeDict["node1ID"]);
+	    var firstCnxn = firstCnxnDict["node"];
+	    firstCnxn["link"] = edgeDict["node2ID"];
+	    firstCnxn["linkDist"] = edgeDict["data"]["weight"];
+	    var secondCnxnDict = findByID(edgeDict["node2ID"]);
+	    var secondCnxn = secondCnxnDict["node"];
+	    secondCnxn["link"] = edgeDict["node1ID"];
+	    secondCnxn["linkDist"] = edgeDict["data"]["weight"];
+	    console.log("cnxn registered");
+	    updateDOM(firstCnxnDict);
+	    updateDOM(secondCnxnDict);
+	}
+
 	
 	for (i = 0; i < totalPages(); i++){
 	    hidePage(i);
@@ -1030,6 +1262,7 @@ var loadMap = function(mapData){
 var saveMap = function(){
 
     newData = JSON.stringify(prepSave());
+    console.log(newData);
     
     $.ajax({
 	url : "/saveData/",
@@ -1043,6 +1276,7 @@ var saveMap = function(){
 	    console.log("error saving");
 	}
     });
+
     return null;
 
     //only assign new IDs internally, use ctr for other purposes
@@ -1055,7 +1289,10 @@ var prepSave = function(){
     var newData = {"mapID": canvasData["mapID"],
 		   "title": canvasData["title"],
 		   "deletePages" : canvasData["deletePages"],
-		   "pages": [] , "guidCtr" : canvasData["guidCtr"]};
+		   "pages": [] ,
+		   "guidCtr" : canvasData["guidCtr"],
+		   "cnxnEdges" : canvasData["cnxnEdges"]
+		  };
     console.log(canvasData["pages"]);
     for (i = 0; i < totalPages(); i++){
 	console.log("we trying");

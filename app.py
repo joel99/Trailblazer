@@ -136,7 +136,7 @@ def register():
     uN = d["username"]
     pwd = d["pass"]
     hashedPwd = bcrypt.generate_password_hash(pwd)    
-    session['uID'] = users.addUser(uN, pwd)
+    session['uID'] = users.addUser(uN, hashedPwd)
     return redirect( url_for('root') )
 
 # Helpers ============================================

@@ -218,11 +218,11 @@ class Node(Base):
         allNodes.extend([x.higherNode for x in self.lowerEdges])
         return allNodes
 
-    def __init__(self, d, pageID, mapID):
+    def __init__(self, d, pageID, mapID, nodeType):
         self.update(d)
         self.pageID = pageID
         self.mapID = mapID
-        self.nodeType = 0
+        self.nodeType = nodeType
 
     def update(self, d):
         self.x = int(d["x"])
@@ -234,13 +234,14 @@ class Node(Base):
     def asDict(self):
         ret = {
             "id" : self.nodeID,
+            "nodeType" : self.nodeType,
             "data": {
                 "x" : self.x,
                 "y" : self.y,
                 "settings" : self.settings,
                 "desc" : self.desc,
                 "name" : self.name
-            }
+            }            
         }
         return ret
         
@@ -289,6 +290,12 @@ class Edge(Base):
         self.settings = d["settings"]
         self.weight = int(d["weight"])
 
+    def markCnxn(self):
+        self.settings = "cnxn"
+
+    def isCnxn(self):
+        return self.settings == "cnxn"
+        
     def asDict(self):
         ret = {
             "data" : {

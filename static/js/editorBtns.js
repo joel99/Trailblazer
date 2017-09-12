@@ -4,6 +4,7 @@ var ptBtn = document.getElementById("ptBtn");
 var pathBtn = document.getElementById("pathBtn");
 var cnxnBtn = document.getElementById("cnxnBtn");
 var delElBtn = document.getElementById("delElBtn");
+var linkBtn = document.getElementById("linkBtn");
 
 var clrBtn = document.getElementById("clrBtn");
 var delPgBtn = document.getElementById("delPgBtn");
@@ -27,6 +28,7 @@ editorCanvas.addEventListener('contextmenu', rClick, false);
 ptBtn.addEventListener("click", setModeFunc(ADD_PT));
 pathBtn.addEventListener("click", setModeFunc(ADD_PATH));
 cnxnBtn.addEventListener("click", setModeFunc(ADD_CNXN));
+linkBtn.addEventListener("click", setModeFunc(LINK_CNXN));
 
 clrBtn.addEventListener("click", clrEditor);
 addPgBtn.addEventListener("click", addPage);
