@@ -20,6 +20,7 @@ var pgTitle = document.getElementById("pgTitle");
 var mapID = document.getElementById("mapID").innerHTML;
 var mousex, mousey;
 var modeDisplay = document.getElementById("modeDisplay");
+var imgPageID = document.getElementById("imgPageID");
 var canvasData = {
     "mapID": mapID,
     "title": pgTitle.innerHTML,
@@ -65,6 +66,7 @@ var getPage = function(num){
 }
 
 var getPageDOM = function(num){
+    console.log("getting page dom");
     return editorCanvas.childNodes[num];
 }
 
@@ -86,6 +88,9 @@ var setPage = function(num){
     hidePage(canvasData["activePageCtr"]);
     canvasData["activePageCtr"] = num;
     showPage(canvasData["activePageCtr"]);
+    imgPageID.value = getActivePage()["id"];
+    bgImagePtn.setAttribute("xlink:href", "/static/resources/bgImages/" + getPage(num)["backgroundImage"]);
+    
 }
 
 // pre :
@@ -174,6 +179,12 @@ var makePageDOM = function(pageDict){
     var p = document.createElementNS("http://www.w3.org/2000/svg", "g");
     
     p.setAttribute("name", pageDict["pageName"]);
+    //var background = new Image();
+    //background.src = "/static/resources/bgImages/" + pageDict["backgroundImage"];
+    //var ctx = editorCanvas.getContext("2d");
+    //background.onload = function(){
+//	ctx.drawImage(background,0,0);   
+  //  }
     p.setAttribute("id", "viewport");
     return p;
 }
@@ -447,6 +458,7 @@ var updateCanvas = function(e){ //for shadow/path
 	
     }
     else{
+	console.log(page);
 	for (i = 0; i < page.children.length; i++){
 	    var child = page.childNodes[i];
 	    
@@ -1044,10 +1056,8 @@ var logChange = function(el){
     case "connection":
 	item["data"]["name"] = el.innerHTML;
 	break;
-    case "link":
-	changeLinkedPageStatus();
-	break;
     case "linkDist":
+	item["data"]["linkDist"] = el.innerHTML;
 	changeLinkedPageStatus();
 	break;
     default:
@@ -1071,7 +1081,7 @@ var delMap = function(){
 var form = document.getElementById('form_upload');
 var fileSelect = document.getElementById('upload_input');
 var uploadButton = document.getElementById('upload-button');
-
+/*
 var uploadImg = function(event){
 
     
@@ -1081,7 +1091,7 @@ var uploadImg = function(event){
     uploadButton.innerHTML = 'Uploading...';
 
     // Get the selected files from the input.
-    var files = upLoadButton.files;
+    var files = fileSelect.files;
     
     // Create a new FormData object.
     var formData = new FormData();
@@ -1097,33 +1107,38 @@ var uploadImg = function(event){
     formData.append('photos[]', file, file.name);
     
     // Set up the request.
-    var xhr = new XMLHttpRequest();
+  //  var xhr = new XMLHttpRequest();
     
     // Open the connection.
-    xhr.open('POST', 'handler.php', true);
+   // xhr.open('POST', 'handler.php', true);
     
     // Set up a handler for when the request finishes.
-    xhr.onload = function () {
-	if (xhr.status === 200) {
+   // xhr.onload = function () {
+//	if (xhr.status === 200) {
 	    // File(s) uploaded.
-	    uploadButton.innerHTML = 'Upload';
-	} 
-	else {
-	    alert('An error occurred!');
-	}
-    };
+//	    uploadButton.innerHTML = 'Upload';
+//	} 
+//	else {
+//	    alert('An error occurred!');
+//	}
+//    };
 
     // Send the Data.
-    xhr.send(formData);
-    
-    //$.ajax({	   
-    //  url: "/map/upload/",
-    // type: "POST",
-    // dataType: "json",
-    //data : {"upload": formData
-    // },//put relevant data in here so python /upload/ route can function
-    
-    
+//    xhr.send(formData);
+
+    console.log("whoops");
+    $.ajax({	   
+	url: "/map/upload/",
+	type: "POST",
+	dataType: "json",
+	contentType: 'application/json;charset=UTF-8',
+	data : JSON.stringify({"jsonStr":{"upload":formData,
+					  "pID":getActivePage()["id"]}		
+			      }),
+	success: function(){
+	    console.log("whooppeee");}
+    });
+    /*
     $.ajax($.extend({}, {
 	url: "/map/upload/",
 	type: 'POST',
@@ -1135,7 +1150,7 @@ var uploadImg = function(event){
 	complete: function(jqXHR, textStatus){ self.settings.complete(jqXHR, textStatus); }
 	
     }, self.settings.submitOptions));
-    
+    */
     /*
       success: function(data) {
       
@@ -1149,9 +1164,9 @@ var uploadImg = function(event){
       );
     */
     
-    return null;
+    //return null;
     
-}
+//}
 
 
 

@@ -30,3 +30,10 @@ def getHashed(uN):
     ret = curUser.passData
     session.close()
     return ret
+
+def getUserID(uN):
+    session = Session()
+    curUser = session.query(User).filter(User.username == uN).one()
+    ret = curUser.userID
+    session.close()
+    return ret

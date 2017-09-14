@@ -12,7 +12,7 @@ var delMapBtn = document.getElementById("delMapBtn");
 var pubMapBtn = document.getElementById("pubMapBtn");
 var saveMapBtn = document.getElementById("saveMapBtn");
 var addPgBtn = document.getElementById("addPgBtn");
-var uploadImgBtn = document.getElementById("uploadImgBtn");
+var uploadImgBtn = document.getElementById("upload-button");
 
 //note: might be replaced with better navigation system
 var nextPgBtn = document.getElementById("nextPgBtn");
@@ -38,5 +38,5 @@ prevPgBtn.addEventListener("click", toPrevPage);
 delElBtn.addEventListener("click", delEl);
 saveMapBtn.addEventListener("click", saveMap);
 delMapBtn.addEventListener("click", delMap);
-uploadImgBtn.addEventListener("click", uploadImg);
+//uploadImgBtn.addEventListener("click", uploadImg);
 

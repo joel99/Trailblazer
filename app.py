@@ -139,6 +139,41 @@ def register():
     session['uID'] = users.addUser(uN, hashedPwd)
     return redirect( url_for('root') )
 
+# Image upload =======================================
+UPLOAD_FOLDER = join(dirname(realpath(__file__)), "static/resources/bgImages")
+ALLOWED_EXTENSIONS = set(['jpg', 'jpeg', 'png'])
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+@app.route("/map/upload/", methods=["POST"])
+def upload():
+    print request.form
+    if "upload" not in request.files:
+       print request.files
+       print "nope"
+       return redirect(request.url)
+    f = request.files.get("upload")
+    pID = request.form["pageID"]
+    print request.files
+    if f.filename == '':
+        print "also nope"
+        return redirect(url_for( "mapEdit", mapID = session["mID"]))
+    print "got here"
+    if f and allowed_file(f.filename):
+        filename = secure_filename(f.filename)
+	f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+	mapUtil.addImage(f.filename , pID)
+	#store into js, and bring that to backend - via ajax?
+	print "nice"
+	#return os.path.abspath( f.filename )
+	return redirect('/map/' + str(request.form["mapID"]) + "/edit")
+    print "uhhhhhhhhhhh"
+    print f.filename
+    print allowed_file(f.filename)
+    return redirect(request.url)
+
+
 # Helpers ============================================
 def isLoggedIn():
     return "uID" in session
@@ -149,6 +184,11 @@ def getUserID():
     else:
         return None
 
+def allowed_file(filename):
+    print filename
+    return "." in filename and filename.rsplit( ".", 1 )[1].lower() in ALLOWED_EXTENSIONS
+
+    
 if __name__ == "__main__":
     app.debug = True
     app.run()

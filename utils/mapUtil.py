@@ -232,3 +232,10 @@ def store(mapData):
     session.commit()
     session.close()
     return True
+
+def addImage(filename, pID):
+    session = Session()
+    curPage = session.query(Page).filter(Page.pageID == pID).one()
+    curPage.backgroundImage = filename
+    session.commit()
+    session.close()

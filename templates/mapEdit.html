@@ -2,7 +2,6 @@
 
 
 {% block content %}
-
 <div class="row page-header">
   <h2 class="col-md-7">Map
     <span id="mapMode">Editor</span> :
@@ -28,8 +27,17 @@
     <button id="linkBtn" class="btn btn-default edit btn-block">Link Cnxns</button>
   </div>
 
-  <div class="col-md-8">
-    <svg class="container-fluid" id="editorCanvas" xmlns="http://www.w3.org/2000/svg" style="border:1px solid #000000"/>
+  <div class="col-md-8">    
+
+    <svg class="container-fluid" id="editorCanvas" xmlns="http://www.w3.org/2000/svg" style="border:1px solid #000000"></svg>
+      <!--
+      <defs>
+      <pattern id="img1" patternUnits="userSpaceOnUse" width="100" height="100">
+	<image id="bgImagePtn" xlink:href="/static/resources/bgImages/defaultBackgroundImage.jpg" x="0" y="0" width="100" height="100" />
+      </pattern>
+      </defs>
+      -->
+
   </div>
 
   <div class="col-md-2">
@@ -47,6 +55,8 @@
 	  Picture Upload
 	</label>
 	<input type="file" class="form-control" id="upload_input" name="upload">
+	<input type="hidden" id="imgPageID" name="pageID">
+	<input type="hidden" name="mapID" value="{{mapData['mapID']}}">
 	<button id="upload-button" class="btn btn default edit btn-block"> Upload Picture</button>
       </form>
     </div>
