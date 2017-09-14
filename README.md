@@ -1,4 +1,21 @@
-Trailblazer : Project by Joel Ye
+Trailblazer : Personal Project by Joel Ye
+
+Mapmaking applet for local GPS
+Extending into app for mobile use
+Applies to places with billboard maps (add a QR to download map!)
+
+Notes:
+Flask Routing Engine
+SQLAlchemy/Postgresql Backend
+Bootstrap/JS Frontend
+
+Notes for the future:
+- Focus on image upload first!
+- Let user mark vector elements as nodes
+- Paths are still edges as usual
+- Connections should be able to have >= 2 degree
+- Use libraries to speed up DOM editing
+
 
 Acknowledgments:
 
