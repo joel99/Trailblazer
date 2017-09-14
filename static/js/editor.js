@@ -66,7 +66,7 @@ var getPage = function(num){
 }
 
 var getPageDOM = function(num){
-    console.log("getting page dom");
+//    console.log("getting page dom");
     return editorCanvas.childNodes[num];
 }
 
@@ -88,8 +88,8 @@ var setPage = function(num){
     hidePage(canvasData["activePageCtr"]);
     canvasData["activePageCtr"] = num;
     showPage(canvasData["activePageCtr"]);
-    imgPageID.value = getActivePage()["id"];
-    bgImagePtn.setAttribute("xlink:href", "/static/resources/bgImages/" + getPage(num)["backgroundImage"]);
+    //imgPageID.value = getActivePage()["id"];
+    //bgImagePtn.setAttribute("xlink:href", "/static/resources/bgImages/" + getPage(num)["backgroundImage"]);
     
 }
 
@@ -458,7 +458,7 @@ var updateCanvas = function(e){ //for shadow/path
 	
     }
     else{
-	console.log(page);
+	//console.log(page);
 	for (i = 0; i < page.children.length; i++){
 	    var child = page.childNodes[i];
 	    

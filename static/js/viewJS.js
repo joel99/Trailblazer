@@ -92,7 +92,11 @@ var calcPath = function(){
 	    allEdges = allEdges.concat(canvasData["pages"][k]["edges"]);
 	    //also get cnxn's here eventually
 	}
+	allEdges = allEdges.concat(canvasData["cnxnEdges"]);
 
+	console.log("ALL EDGES!");
+	console.log(allEdges);
+	
 	for (k = 0; k < totalPages(); k++){ //initialize distances
 	    var curNodeArr = canvasData["pages"][k]["nodes"];
 	    var l;
