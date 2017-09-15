@@ -1,4 +1,5 @@
 Trailblazer : Personal Project by Joel Ye
+Link to Trax (Final group project version) : https://github.com/joel99/DoYourCodeWork
 
 Mapmaking applet for local GPS
 Extending into app for mobile use
